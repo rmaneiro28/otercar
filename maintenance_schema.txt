@@ -1,0 +1,48 @@
+-- Create table for linking parts to maintenance
+CREATE TABLE IF NOT EXISTS mantenimiento_repuestos (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  mantenimiento_id UUID REFERENCES mantenimientos(id) ON DELETE CASCADE,
+  repuesto_id UUID REFERENCES inventario(id),
+  cantidad INTEGER NOT NULL,
+  precio_unitario DECIMAL(10,2) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Add RLS policies for mantenimiento_repuestos
+ALTER TABLE mantenimiento_repuestos ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Usuarios pueden ver sus propios repuestos de mantenimiento"
+ON mantenimiento_repuestos FOR SELECT
+USING (
+  EXISTS (
+    SELECT 1 FROM mantenimientos
+    WHERE mantenimientos.id = mantenimiento_repuestos.mantenimiento_id
+    AND mantenimientos.usuario_id = auth.uid()
+  )
+);
+
+CREATE POLICY "Usuarios pueden insertar repuestos en sus mantenimientos"
+ON mantenimiento_repuestos FOR INSERT
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM mantenimientos
+    WHERE mantenimientos.id = mantenimiento_repuestos.mantenimiento_id
+    AND mantenimientos.usuario_id = auth.uid()
+  )
+);
+
+-- Ensure mantenimientos table has necessary columns
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'mantenimientos' AND column_name = 'costo_mano_obra') THEN
+        ALTER TABLE mantenimientos ADD COLUMN costo_mano_obra DECIMAL(10,2) DEFAULT 0;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'mantenimientos' AND column_name = 'costo_total') THEN
+        ALTER TABLE mantenimientos ADD COLUMN costo_total DECIMAL(10,2) DEFAULT 0;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'mantenimientos' AND column_name = 'mecanico_id') THEN
+        ALTER TABLE mantenimientos ADD COLUMN mecanico_id UUID REFERENCES mecanicos(id);
+    END IF;
+END $$;

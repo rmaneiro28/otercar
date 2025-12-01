@@ -1,0 +1,15 @@
+-- Add 'descripcion' column to 'mantenimientos' table if it doesn't exist
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'mantenimientos' AND column_name = 'descripcion') THEN
+        ALTER TABLE public.mantenimientos ADD COLUMN descripcion text;
+    END IF;
+END $$;
+
+-- Also check for 'notas' just in case
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'mantenimientos' AND column_name = 'notas') THEN
+        ALTER TABLE public.mantenimientos ADD COLUMN notas text;
+    END IF;
+END $$;

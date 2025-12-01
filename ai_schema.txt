@@ -1,0 +1,43 @@
+-- Create table for storing AI recommendations
+create table if not exists public.recomendaciones_ia (
+  id uuid default gen_random_uuid() primary key,
+  vehiculo_id uuid references public.vehiculos(id) on delete cascade not null,
+  fecha_generacion timestamp with time zone default timezone('utc'::text, now()) not null,
+  contenido text not null,
+  tipo text check (tipo in ('mantenimiento', 'alerta', 'general')) default 'general',
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Enable RLS
+alter table public.recomendaciones_ia enable row level security;
+
+-- Create policies
+create policy "Usuarios pueden ver recomendaciones de sus vehículos"
+  on public.recomendaciones_ia for select
+  using (
+    exists (
+      select 1 from public.vehiculos
+      where vehiculos.id = recomendaciones_ia.vehiculo_id
+      and vehiculos.usuario_id = auth.uid()
+    )
+  );
+
+create policy "Usuarios pueden insertar recomendaciones para sus vehículos"
+  on public.recomendaciones_ia for insert
+  with check (
+    exists (
+      select 1 from public.vehiculos
+      where vehiculos.id = recomendaciones_ia.vehiculo_id
+      and vehiculos.usuario_id = auth.uid()
+    )
+  );
+
+create policy "Usuarios pueden eliminar recomendaciones de sus vehículos"
+  on public.recomendaciones_ia for delete
+  using (
+    exists (
+      select 1 from public.vehiculos
+      where vehiculos.id = recomendaciones_ia.vehiculo_id
+      and vehiculos.usuario_id = auth.uid()
+    )
+  );
