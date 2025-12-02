@@ -1,24 +1,25 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { useAuth } from './context/AuthContext';
 import Layout from './components/Layout/Layout';
-import Dashboard from './pages/Dashboard';
-import Vehicles from './pages/Vehicles';
-import Inventory from './pages/Inventory';
-import Mechanics from './pages/Mechanics';
-import Stores from './pages/Stores';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Profile from './pages/Profile';
-import Settings from './pages/Settings';
-import Maintenance from './pages/Maintenance';
-import AIHistory from './pages/AIHistory';
+import Loading from './components/Loading';
+
+// Lazy load pages
+const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const Vehicles = React.lazy(() => import('./pages/Vehicles'));
+const Inventory = React.lazy(() => import('./pages/Inventory'));
+const Mechanics = React.lazy(() => import('./pages/Mechanics'));
+const Stores = React.lazy(() => import('./pages/Stores'));
+const Login = React.lazy(() => import('./pages/Login'));
+const Register = React.lazy(() => import('./pages/Register'));
+const Profile = React.lazy(() => import('./pages/Profile'));
+const Settings = React.lazy(() => import('./pages/Settings'));
+const Maintenance = React.lazy(() => import('./pages/Maintenance'));
+const AIHistory = React.lazy(() => import('./pages/AIHistory'));
 
 const PrivateRoute = ({ children }) => {
   const { user } = useAuth();
-  // We might want to show a loading spinner here while checking auth
-  // but for now, if user is null (and not loading, which is handled in AuthProvider), redirect
   return user ? children : <Navigate to="/login" />;
 };
 
@@ -26,26 +27,28 @@ function App() {
   return (
     <Router>
       <Toaster position="top-center" richColors />
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+      <Suspense fallback={<Loading />}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-        <Route path="/" element={
-          <PrivateRoute>
-            <Layout />
-          </PrivateRoute>
-        }>
-          <Route index element={<Dashboard />} />
-          <Route path="vehicles" element={<Vehicles />} />
-          <Route path="inventory" element={<Inventory />} />
-          <Route path="mechanics" element={<Mechanics />} />
-          <Route path="stores" element={<Stores />} />
-          <Route path="maintenance" element={<Maintenance />} />
-          <Route path="ai-history" element={<AIHistory />} />
-          <Route path="profile" element={<Profile />} />
-          <Route path="settings" element={<Settings />} />
-        </Route>
-      </Routes>
+          <Route path="/" element={
+            <PrivateRoute>
+              <Layout />
+            </PrivateRoute>
+          }>
+            <Route index element={<Dashboard />} />
+            <Route path="vehicles" element={<Vehicles />} />
+            <Route path="inventory" element={<Inventory />} />
+            <Route path="mechanics" element={<Mechanics />} />
+            <Route path="stores" element={<Stores />} />
+            <Route path="maintenance" element={<Maintenance />} />
+            <Route path="ai-history" element={<AIHistory />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
+        </Routes>
+      </Suspense>
     </Router>
   );
 }
