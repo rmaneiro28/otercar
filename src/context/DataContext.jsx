@@ -193,6 +193,30 @@ export const DataProvider = ({ children }) => {
 
     // --- Maintenance (Mantenimientos) ---
     const addMaintenance = async (maint, parts = []) => {
+        // 0. Validate Stock (Server-side check)
+        if (parts.length > 0) {
+            for (const p of parts) {
+                const { data: currentPart, error: fetchError } = await supabase
+                    .from('inventario')
+                    .select('cantidad, nombre')
+                    .eq('id', p.id)
+                    .single();
+
+                if (fetchError) {
+                    console.error('Error checking stock:', fetchError.message);
+                    return { error: fetchError };
+                }
+
+                if (currentPart.cantidad < p.cantidad_usada) {
+                    return {
+                        error: {
+                            message: `Stock insuficiente para ${currentPart.nombre}. Disponible: ${currentPart.cantidad}, Requerido: ${p.cantidad_usada}`
+                        }
+                    };
+                }
+            }
+        }
+
         // 1. Insert Maintenance Record
         const { data: maintData, error: maintError } = await supabase
             .from('mantenimientos')
@@ -221,15 +245,25 @@ export const DataProvider = ({ children }) => {
 
             if (partsError) {
                 console.error('Error adding maintenance parts:', partsError.message);
+                // Note: We might want to rollback maintenance here, but Supabase JS doesn't support transactions easily without RPC.
             }
 
             // 3. Update Inventory Quantities
             for (const p of parts) {
-                const newQuantity = p.cantidad - p.cantidad_usada;
-                await supabase
+                // Fetch fresh quantity again to be safe (though we just checked)
+                const { data: currentPart } = await supabase
                     .from('inventario')
-                    .update({ cantidad: newQuantity })
-                    .eq('id', p.id);
+                    .select('cantidad')
+                    .eq('id', p.id)
+                    .single();
+
+                if (currentPart) {
+                    const newQuantity = currentPart.cantidad - p.cantidad_usada;
+                    await supabase
+                        .from('inventario')
+                        .update({ cantidad: newQuantity })
+                        .eq('id', p.id);
+                }
             }
         }
 
