@@ -1,10 +1,14 @@
-
 /**
- * Service to interact with local Ollama instance
+ * Service to interact with Groq AI API
  */
 
-const OLLAMA_API_URL = 'http://localhost:11434/api/generate';
-const MODEL_NAME = 'llama3';
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const MODEL_NAME = 'llama3-70b-8192';
+
+const getHeaders = () => ({
+  'Content-Type': 'application/json',
+  'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`
+});
 
 export const generateMaintenanceInsight = async (vehicle, maintenanceHistory) => {
   try {
@@ -34,33 +38,35 @@ export const generateMaintenanceInsight = async (vehicle, maintenanceHistory) =>
       SOLO responde con el JSON, sin texto adicional.
     `;
 
-    const response = await fetch(OLLAMA_API_URL, {
+    const response = await fetch(GROQ_API_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getHeaders(),
       body: JSON.stringify({
         model: MODEL_NAME,
-        prompt: prompt,
-        stream: false, // We want the full response at once
-        format: "json" // Force JSON output mode if supported by the model version, otherwise prompt handles it
+        messages: [
+          { role: "system", content: "Eres un asistente mecánico experto que responde siempre en formato JSON." },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.5,
+        response_format: { type: "json_object" }
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`Ollama API Error: ${response.statusText}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Groq API Error: ${response.status} - ${errorData.error?.message || response.statusText}`);
     }
 
     const data = await response.json();
+    const content = data.choices[0]?.message?.content;
 
-    // Parse the response field which contains the actual text/json from the model
     try {
-      return JSON.parse(data.response);
+      return JSON.parse(content);
     } catch (e) {
-      console.warn("Could not parse JSON from AI, returning raw text", data.response);
+      console.warn("Could not parse JSON from AI, returning raw text", content);
       return {
         recomendacion: "Análisis completado",
-        detalle: data.response,
+        detalle: content,
         prioridad: "Media",
         estimado: "Revisar manual"
       };
@@ -73,7 +79,6 @@ export const generateMaintenanceInsight = async (vehicle, maintenanceHistory) =>
 };
 
 export const chatWithAI = async (messages, contextData = {}) => {
-  const OLLAMA_URL = 'http://localhost:11434/api/chat';
 
   // Format context data for the AI
   const contextString = `
@@ -110,24 +115,24 @@ export const chatWithAI = async (messages, contextData = {}) => {
   };
 
   try {
-    const response = await fetch(OLLAMA_URL, {
+    const response = await fetch(GROQ_API_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getHeaders(),
       body: JSON.stringify({
-        model: 'llama3',
+        model: MODEL_NAME,
         messages: [systemMessage, ...messages],
-        stream: false
+        temperature: 0.7,
+        max_tokens: 1024
       }),
     });
 
     if (!response.ok) {
-      throw new Error('Error connecting to Ollama');
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(`Groq API Error: ${response.status} - ${errorData.error?.message || response.statusText}`);
     }
 
     const data = await response.json();
-    return data.message;
+    return { role: 'assistant', content: data.choices[0]?.message?.content };
   } catch (error) {
     console.error('AI Chat Error:', error);
     throw error;
