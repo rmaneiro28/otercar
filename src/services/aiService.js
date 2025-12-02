@@ -3,7 +3,7 @@
  */
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL_NAME = 'llama3-70b-8192';
+const MODEL_NAME = 'llama-3.1-70b-versatile';
 
 const getHeaders = () => ({
   'Content-Type': 'application/json',
