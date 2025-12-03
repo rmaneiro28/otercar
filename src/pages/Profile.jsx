@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 import { User, Shield, Mail, Calendar, Edit2, Save, X, Camera } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 
 const Profile = () => {
     const { user, profile } = useAuth();
+    const { company } = useData();
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
         nombre_completo: profile?.nombre_completo || '',
@@ -155,6 +157,21 @@ const Profile = () => {
                                     <div>
                                         <p className="text-sm text-slate-500 font-medium">Correo Electrónico</p>
                                         <p className="text-slate-800">{user.email}</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-4">
+                                    <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
+                                        <Shield className="w-5 h-5" />
+                                    </div>
+                                    <div>
+                                        <p className="text-sm text-slate-500 font-medium">Empresa / Plan</p>
+                                        <p className="text-slate-800 font-medium">
+                                            {company?.nombre || 'Cargando...'}
+                                            <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 border border-slate-200 uppercase">
+                                                {company?.plan || 'Free'}
+                                            </span>
+                                        </p>
                                     </div>
                                 </div>
 

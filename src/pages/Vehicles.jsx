@@ -6,7 +6,7 @@ import VehicleForm from '../components/Forms/VehicleForm';
 import { toast } from 'sonner';
 
 const Vehicles = () => {
-  const { vehicles, addVehicle, updateVehicle, deleteVehicle } = useData();
+  const { vehicles, owners, addVehicle, updateVehicle, deleteVehicle } = useData();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -112,6 +112,12 @@ const Vehicles = () => {
                   <div>
                     <h3 className="text-lg font-bold text-slate-800">{vehicle.marca} {vehicle.modelo}</h3>
                     <p className="text-slate-500 text-sm">{vehicle.anio} • {vehicle.color}</p>
+                    {/* Display Owner/Client */}
+                    {owners.find(o => o.id === vehicle.propietario_id) && (
+                      <p className="text-xs text-blue-600 font-medium mt-1">
+                        Cliente: {owners.find(o => o.id === vehicle.propietario_id).nombre_completo}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">

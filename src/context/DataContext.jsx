@@ -7,22 +7,26 @@ const DataContext = createContext();
 export const useData = () => useContext(DataContext);
 
 export const DataProvider = ({ children }) => {
-    const { user } = useAuth();
+    const { user, profile } = useAuth();
     const [vehicles, setVehicles] = useState([]);
+    const [owners, setOwners] = useState([]); // New state for owners (users)
     const [inventory, setInventory] = useState([]);
     const [mechanics, setMechanics] = useState([]);
     const [stores, setStores] = useState([]);
     const [maintenance, setMaintenance] = useState([]);
     const [recommendations, setRecommendations] = useState([]);
     const [notifications, setNotifications] = useState([]);
+    const [company, setCompany] = useState(null);
     const [loading, setLoading] = useState(true);
 
     // Fetch data when user changes
     useEffect(() => {
-        if (user) {
+        if (user && profile?.empresa_id) {
             fetchData();
         } else {
+            setCompany(null);
             setVehicles([]);
+            setOwners([]);
             setInventory([]);
             setMechanics([]);
             setStores([]);
@@ -30,22 +34,38 @@ export const DataProvider = ({ children }) => {
             setRecommendations([]);
             setNotifications([]);
         }
-    }, [user]);
+    }, [user, profile]);
 
     const fetchData = async () => {
         setLoading(true);
+        const empresaId = profile?.empresa_id;
+        if (!empresaId) return;
+
         try {
-            const [vehRes, invRes, mechRes, storeRes, maintRes, recRes, notifRes] = await Promise.all([
-                supabase.from('vehiculos').select('*').order('created_at', { ascending: false }),
-                supabase.from('inventario').select('*').order('created_at', { ascending: false }),
-                supabase.from('mecanicos').select('*').order('created_at', { ascending: false }),
-                supabase.from('tiendas').select('*').order('created_at', { ascending: false }),
-                supabase.from('mantenimientos').select('*').order('fecha', { ascending: false }),
-                supabase.from('recomendaciones_ia').select('*').order('created_at', { ascending: false }),
-                supabase.from('notificaciones').select('*').order('created_at', { ascending: false }),
+            // Fetch company details first to get the plan
+            const { data: companyData, error: companyError } = await supabase
+                .from('empresas')
+                .select('*')
+                .eq('id', empresaId)
+                .single();
+
+            if (companyData) setCompany(companyData);
+
+            const [vehRes, ownerRes, invRes, mechRes, storeRes, maintRes, recRes, notifRes] = await Promise.all([
+                supabase.from('vehiculos').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
+                // ...
+                supabase.from('propietarios').select('*').eq('empresa_id', empresaId).order('nombre_completo', { ascending: true }), // Fetch clients (propietarios)
+                supabase.from('inventario').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
+                supabase.from('mecanicos').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
+                supabase.from('tiendas').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
+                supabase.from('mantenimientos').select('*').eq('empresa_id', empresaId).order('fecha', { ascending: false }),
+                supabase.from('mantenimientos').select('*').eq('empresa_id', empresaId).order('fecha', { ascending: false }),
+                supabase.from('recomendaciones_ia').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
+                supabase.from('notificaciones').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
             ]);
 
             if (vehRes.error) throw vehRes.error;
+            if (ownerRes.error && ownerRes.error.code !== '42P01') console.warn('Error fetching owners:', ownerRes.error);
             if (invRes.error) throw invRes.error;
             if (mechRes.error) throw mechRes.error;
             if (storeRes.error) throw storeRes.error;
@@ -54,6 +74,7 @@ export const DataProvider = ({ children }) => {
             if (notifRes.error && notifRes.error.code !== '42P01') throw notifRes.error;
 
             setVehicles(vehRes.data || []);
+            setOwners(ownerRes.data || []);
             setInventory(invRes.data || []);
             setMechanics(mechRes.data || []);
             setStores(storeRes.data || []);
@@ -69,7 +90,25 @@ export const DataProvider = ({ children }) => {
 
     // --- Vehicles (Vehiculos) ---
     const addVehicle = async (vehicle) => {
-        const { data, error } = await supabase.from('vehiculos').insert([{ ...vehicle, usuario_id: user.id }]).select();
+        // Check Plan Limits
+        const plan = company?.plan || 'free';
+        const currentCount = vehicles.length;
+
+        if (plan === 'free' && currentCount >= 1) {
+            return { error: { message: 'Plan Básico limitado a 1 vehículo. Actualiza tu plan.' } };
+        }
+        if (plan === 'standard' && currentCount >= 3) {
+            return { error: { message: 'Plan Estándar limitado a 3 vehículos. Actualiza tu plan.' } };
+        }
+
+        const vehicleData = {
+            ...vehicle,
+            empresa_id: profile.empresa_id,
+            // If usuario_id was used before, now we map it to propietario_id if it exists in the form
+            propietario_id: vehicle.propietario_id || null
+        };
+
+        const { data, error } = await supabase.from('vehiculos').insert([vehicleData]).select();
         if (error) {
             console.error('Error adding vehicle:', error.message);
             return { error };
@@ -98,9 +137,20 @@ export const DataProvider = ({ children }) => {
         return { success: true };
     };
 
+    // --- Clients (Propietarios) ---
+    const addClient = async (client) => {
+        const { data, error } = await supabase.from('propietarios').insert([{ ...client, empresa_id: profile.empresa_id }]).select();
+        if (error) {
+            console.error('Error adding client:', error.message);
+            return { error };
+        }
+        setOwners([data[0], ...owners]);
+        return { data: data[0] };
+    };
+
     // --- Inventory (Inventario) ---
     const addPart = async (part) => {
-        const { data, error } = await supabase.from('inventario').insert([{ ...part, usuario_id: user.id }]).select();
+        const { data, error } = await supabase.from('inventario').insert([{ ...part, usuario_id: user.id, empresa_id: profile.empresa_id }]).select();
         if (error) {
             console.error('Error adding part:', error.message);
             return { error };
@@ -131,7 +181,7 @@ export const DataProvider = ({ children }) => {
 
     // --- Mechanics (Mecanicos) ---
     const addMechanic = async (mechanic) => {
-        const { data, error } = await supabase.from('mecanicos').insert([{ ...mechanic, usuario_id: user.id }]).select();
+        const { data, error } = await supabase.from('mecanicos').insert([{ ...mechanic, usuario_id: user.id, empresa_id: profile.empresa_id }]).select();
         if (error) {
             console.error('Error adding mechanic:', error.message);
             return { error };
@@ -162,7 +212,7 @@ export const DataProvider = ({ children }) => {
 
     // --- Stores (Tiendas) ---
     const addStore = async (store) => {
-        const { data, error } = await supabase.from('tiendas').insert([{ ...store, usuario_id: user.id }]).select();
+        const { data, error } = await supabase.from('tiendas').insert([{ ...store, usuario_id: user.id, empresa_id: profile.empresa_id }]).select();
         if (error) {
             console.error('Error adding store:', error.message);
             return { error };
@@ -220,7 +270,7 @@ export const DataProvider = ({ children }) => {
         // 1. Insert Maintenance Record
         const { data: maintData, error: maintError } = await supabase
             .from('mantenimientos')
-            .insert([{ ...maint, usuario_id: user.id }])
+            .insert([{ ...maint, usuario_id: user.id, empresa_id: profile.empresa_id }])
             .select();
 
         if (maintError) {
@@ -274,7 +324,12 @@ export const DataProvider = ({ children }) => {
 
     // --- AI Recommendations ---
     const addRecommendation = async (recommendation) => {
-        const { data, error } = await supabase.from('recomendaciones_ia').insert([recommendation]).select();
+        const plan = company?.plan || 'free';
+        if (plan === 'free') {
+            return { error: { message: 'Tu plan actual no incluye IA. Actualiza a Estándar o Premium.' } };
+        }
+
+        const { data, error } = await supabase.from('recomendaciones_ia').insert([{ ...recommendation, empresa_id: profile.empresa_id }]).select();
         if (error) {
             console.error('Error adding recommendation:', error.message);
             return { error };
@@ -307,6 +362,7 @@ export const DataProvider = ({ children }) => {
 
     const value = {
         vehicles, addVehicle, updateVehicle, deleteVehicle,
+        owners, addClient, // Expose owners and addClient
         inventory, addPart, updatePart, deletePart,
         mechanics, addMechanic, updateMechanic, deleteMechanic,
         stores, addStore, updateStore, deleteStore,

@@ -84,13 +84,15 @@ export const AuthProvider = ({ children }) => {
     };
 
 
-    const signUp = async (email, password, fullName) => {
+    const signUp = async (email, password, fullName, role = 'usuario', plan = 'free') => {
         const { data, error } = await supabase.auth.signUp({
             email,
             password,
             options: {
                 data: {
                     full_name: fullName,
+                    role: role,
+                    plan: plan
                 },
             },
         });
@@ -98,9 +100,35 @@ export const AuthProvider = ({ children }) => {
         if (error) {
             toast.error('Error al registrarse: ' + error.message);
         } else if (data?.user) {
-            // Create profile entry
+            // 1. Create Company if role is 'taller' (or even for 'usuario' if we want a personal company)
+            let empresaId = null;
+
+            // For now, let's create a company for EVERYONE so the logic is consistent.
+            // Personal users get a "Personal Company", Talleres get their Shop Company.
+            const companyName = role === 'taller' ? fullName : `Personal - ${fullName}`;
+
+            const { data: companyData, error: companyError } = await supabase
+                .from('empresas')
+                .insert([{ nombre: companyName, owner_id: data.user.id, plan: plan }])
+                .select()
+                .single();
+
+            if (companyError) {
+                console.error('Error creating company:', companyError);
+                // Continue anyway, but this is bad.
+            } else {
+                empresaId = companyData.id;
+            }
+
+            // 2. Create profile entry linked to company
             const { error: profileError } = await supabase.from('perfiles').insert([
-                { id: data.user.id, nombre_completo: fullName, email: email, rol: 'usuario' }
+                {
+                    id: data.user.id,
+                    nombre_completo: fullName,
+                    email: email,
+                    rol: role,
+                    empresa_id: empresaId
+                }
             ]);
 
             if (profileError) {

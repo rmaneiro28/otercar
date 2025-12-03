@@ -3,8 +3,12 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Car, Wrench, Users, Store, Plus, Menu, X, Sparkles, FileText } from 'lucide-react';
 import clsx from 'clsx';
 
+import { useAuth } from '../../context/AuthContext';
+
 const BottomNav = () => {
     const navigate = useNavigate();
+    const { profile } = useAuth();
+    const isTaller = profile?.rol === 'taller';
     const [isMoreOpen, setIsMoreOpen] = useState(false);
 
     const mainNavItems = [
@@ -20,6 +24,7 @@ const BottomNav = () => {
         { icon: Wrench, label: 'Inventario', path: '/inventory' },
         { icon: Users, label: 'Mecánicos', path: '/mechanics' },
         { icon: Store, label: 'Tiendas', path: '/stores' },
+        ...(isTaller ? [{ icon: Users, label: 'Propietarios', path: '/owners' }] : []),
         { icon: Sparkles, label: 'Historial IA', path: '/ai-history' },
     ];
 

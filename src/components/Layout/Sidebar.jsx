@@ -1,12 +1,18 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { LayoutDashboard, Car, Wrench, Users, Store, Settings, LogOut, FileText, Sparkles } from 'lucide-react';
 import clsx from 'clsx';
 
 const Sidebar = () => {
+    const { profile } = useAuth();
+    const isTaller = profile?.rol === 'taller';
+
     const navItems = [
         { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
         { icon: Car, label: 'Vehículos', path: '/vehicles' },
+        // Only show Clients for Taller
+        ...(isTaller ? [{ icon: Users, label: 'Clientes', path: '/owners' }] : []),
         { icon: Wrench, label: 'Inventario', path: '/inventory' },
         { icon: FileText, label: 'Mantenimiento', path: '/maintenance' },
         { icon: Sparkles, label: 'Historial IA', path: '/ai-history' },

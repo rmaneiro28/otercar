@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useData } from '../context/DataContext';
 import { supabase } from '../supabaseClient';
 import { toast } from 'sonner';
-import { Lock, Bell, Moon, Sun, Globe, Shield } from 'lucide-react';
+import { Lock, Bell, Moon, Sun, Globe, Shield, CreditCard, Settings as SettingsIcon } from 'lucide-react';
 
 const Settings = () => {
     const { user } = useAuth();
@@ -85,6 +86,37 @@ const Settings = () => {
                             {loading ? 'Actualizando...' : 'Actualizar Contraseña'}
                         </button>
                     </form>
+                </div>
+
+                {/* Subscription Section */}
+                <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                    <div className="flex items-center gap-3 mb-6">
+                        <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600">
+                            <CreditCard className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-bold text-slate-800">Suscripción</h2>
+                            <p className="text-sm text-slate-500">Gestiona tu plan y facturación</p>
+                        </div>
+                    </div>
+
+                    <div className="bg-slate-50 rounded-xl p-4 flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-slate-500 mb-1">Plan Actual</p>
+                            <p className="text-xl font-bold text-slate-800 capitalize">{company?.plan || 'Free'}</p>
+                            <p className="text-xs text-slate-500 mt-1">
+                                {company?.plan === 'free' ? '$0/mes' :
+                                    company?.plan === 'standard' ? '$9/mes' :
+                                        company?.plan === 'premium' ? '$19/mes' : '$29/mes'}
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => toast.info('Funcionalidad de cambio de plan próximamente')}
+                            className="px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg text-sm font-medium hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                        >
+                            Cambiar Plan
+                        </button>
+                    </div>
                 </div>
 
                 {/* Preferences Section (Mock) */}

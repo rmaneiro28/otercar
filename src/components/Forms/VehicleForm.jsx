@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useData } from '../../context/DataContext';
 
 const VehicleForm = ({ onSubmit, initialData, onCancel }) => {
+    const { owners } = useData();
     const [formData, setFormData] = useState({
         marca: '',
         modelo: '',
@@ -9,6 +11,7 @@ const VehicleForm = ({ onSubmit, initialData, onCancel }) => {
         color: '',
         vin: '',
         kilometraje: 0,
+        propietario_id: '', // Client ID
     });
 
     useEffect(() => {
@@ -29,6 +32,25 @@ const VehicleForm = ({ onSubmit, initialData, onCancel }) => {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Owner Selection */}
+            <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Cliente / Propietario</label>
+                <select
+                    name="propietario_id"
+                    value={formData.propietario_id || ''}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                >
+                    <option value="">-- Seleccionar Cliente --</option>
+                    {owners.map(owner => (
+                        <option key={owner.id} value={owner.id}>
+                            {owner.nombre_completo} {owner.email ? `(${owner.email})` : ''}
+                        </option>
+                    ))}
+                </select>
+                <p className="text-xs text-slate-500 mt-1">Selecciona el cliente dueño del vehículo.</p>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Marca</label>

@@ -16,10 +16,17 @@ const StatCard = ({ title, value, icon: Icon, color, trend }) => (
 );
 
 const Dashboard = () => {
-    const { vehicles, inventory, mechanics, stores } = useData();
+    const { vehicles, inventory, mechanics, stores, company } = useData();
+    const { profile } = useAuth();
 
     // Calculate low stock items (less than 5)
     const lowStockCount = inventory.filter(item => item.cantidad < 5).length;
+
+    // Plan Limits
+    const plan = company?.plan || 'free';
+    const vehicleLimit = plan === 'free' ? 1 : plan === 'standard' ? 3 : Infinity;
+    const vehicleLimitText = vehicleLimit === Infinity ? 'Ilimitado' : `${vehicles.length} / ${vehicleLimit}`;
+    const isLimitReached = vehicleLimit !== Infinity && vehicles.length >= vehicleLimit;
 
     // Combine all items to generate recent activity
     const getAllActivity = () => {
@@ -43,8 +50,8 @@ const Dashboard = () => {
             title: 'Vehículos',
             value: vehicles.length,
             icon: Car,
-            color: 'bg-blue-500',
-            trend: 'En flota'
+            color: isLimitReached ? 'bg-red-500' : 'bg-blue-500',
+            trend: `Plan: ${vehicleLimitText}`
         },
         {
             title: 'Repuestos',
@@ -73,7 +80,10 @@ const Dashboard = () => {
         <div>
             <div className="mb-8">
                 <h1 className="text-2xl font-bold text-slate-800">Dashboard</h1>
-                <p className="text-slate-500">Bienvenido al sistema de gestión de mantenimiento.</p>
+                <p className="text-slate-500">
+                    Bienvenido al sistema de {profile?.rol === 'taller' ? 'tu Taller' : 'gestión personal'}.
+                    {/* We could fetch company name if we had it in profile, but we have empresa_id */}
+                </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -90,8 +100,8 @@ const Dashboard = () => {
                             {recentActivity.map((item, index) => (
                                 <div key={index} className="flex items-center gap-3 pb-3 border-b border-slate-50 last:border-0 last:pb-0">
                                     <div className={`w-2 h-2 rounded-full ${item.type === 'vehicle' ? 'bg-blue-500' :
-                                            item.type === 'inventory' ? 'bg-orange-500' :
-                                                item.type === 'mechanic' ? 'bg-purple-500' : 'bg-emerald-500'
+                                        item.type === 'inventory' ? 'bg-orange-500' :
+                                            item.type === 'mechanic' ? 'bg-purple-500' : 'bg-emerald-500'
                                         }`} />
                                     <div>
                                         <p className="text-sm font-medium text-slate-700">{item.label}</p>
