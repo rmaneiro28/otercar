@@ -7,7 +7,7 @@ import FloatingChat from '../AI/FloatingChat';
 
 const Layout = () => {
     return (
-        <div className="min-h-screen bg-slate-50 flex">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex transition-colors duration-300">
             {/* Sidebar - Hidden on mobile */}
             <div className="hidden md:block">
                 <Sidebar />

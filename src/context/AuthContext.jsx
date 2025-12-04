@@ -85,8 +85,9 @@ export const AuthProvider = ({ children }) => {
 
 
     const signUp = async (email, password, fullName, role = 'usuario', plan = 'free') => {
+        const cleanEmail = email.trim();
         const { data, error } = await supabase.auth.signUp({
-            email,
+            email: cleanEmail,
             password,
             options: {
                 data: {
@@ -107,14 +108,24 @@ export const AuthProvider = ({ children }) => {
             // Personal users get a "Personal Company", Talleres get their Shop Company.
             const companyName = role === 'taller' ? fullName : `Personal - ${fullName}`;
 
+            // Determine limits based on plan
+            let limitVehicles = 1; // Default Free
+            if (plan === 'standard') limitVehicles = 3;
+            if (plan === 'premium' || plan === 'taller') limitVehicles = -1; // Unlimited
+
             const { data: companyData, error: companyError } = await supabase
                 .from('empresas')
-                .insert([{ nombre: companyName, owner_id: data.user.id, plan: plan }])
+                .insert([{
+                    nombre: companyName,
+                    owner_id: data.user.id,
+                    plan: plan,
+                    limit_vehicles: limitVehicles
+                }])
                 .select()
                 .single();
 
             if (companyError) {
-                console.error('Error creating company:', companyError);
+                console.error('Error creating company:', JSON.stringify(companyError, null, 2));
                 // Continue anyway, but this is bad.
             } else {
                 empresaId = companyData.id;
@@ -125,7 +136,7 @@ export const AuthProvider = ({ children }) => {
                 {
                     id: data.user.id,
                     nombre_completo: fullName,
-                    email: email,
+                    email: cleanEmail,
                     rol: role,
                     empresa_id: empresaId
                 }

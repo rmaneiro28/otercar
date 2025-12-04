@@ -61,8 +61,8 @@ const Maintenance = () => {
         <div>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-800">Mantenimiento y Reparaciones</h1>
-                    <p className="text-slate-500">Registro histórico de trabajos realizados.</p>
+                    <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Mantenimiento y Reparaciones</h1>
+                    <p className="text-slate-500 dark:text-slate-400">Registro histórico de trabajos realizados.</p>
                 </div>
                 <button
                     onClick={handleAdd}
@@ -81,14 +81,14 @@ const Maintenance = () => {
                         placeholder="Buscar por descripción..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-800 dark:text-white placeholder:text-slate-400"
                     />
                 </div>
                 <div className="w-full md:w-64">
                     <select
                         value={selectedVehicleId}
                         onChange={(e) => setSelectedVehicleId(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all appearance-none cursor-pointer"
+                        className="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all appearance-none cursor-pointer text-slate-800 dark:text-white"
                     >
                         <option value="">Todos los Vehículos</option>
                         {vehicles.map(v => (
@@ -106,37 +106,37 @@ const Maintenance = () => {
 
             <div className="space-y-4">
                 {filteredMaintenance.length === 0 ? (
-                    <div className="bg-white p-12 rounded-2xl shadow-sm border border-slate-100 text-center">
-                        <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Wrench className="w-8 h-8 text-slate-400" />
+                    <div className="bg-white dark:bg-slate-900 p-12 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 text-center transition-colors duration-300">
+                        <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Wrench className="w-8 h-8 text-slate-400 dark:text-slate-500" />
                         </div>
-                        <h3 className="text-lg font-medium text-slate-800 mb-2">Sin registros</h3>
-                        <p className="text-slate-500 mb-6">No hay mantenimientos registrados aún.</p>
+                        <h3 className="text-lg font-medium text-slate-800 dark:text-white mb-2">Sin registros</h3>
+                        <p className="text-slate-500 dark:text-slate-400 mb-6">No hay mantenimientos registrados aún.</p>
                         <button
                             onClick={handleAdd}
-                            className="text-blue-600 font-medium hover:text-blue-700 hover:underline"
+                            className="text-blue-600 dark:text-blue-400 font-medium hover:text-blue-700 hover:underline"
                         >
                             Registrar el primero
                         </button>
                     </div>
                 ) : (
                     filteredMaintenance.map((item) => (
-                        <div key={item.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-shadow">
+                        <div key={item.id} className="bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-md transition-all">
                             <div className="flex flex-col md:flex-row justify-between gap-4">
                                 <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600">
+                                    <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400">
                                         <Wrench className="w-6 h-6" />
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2 mb-1">
-                                            <h3 className="text-lg font-bold text-slate-800">{item.tipo}</h3>
-                                            <span className="px-2 py-0.5 bg-slate-100 text-slate-600 text-xs rounded-lg font-medium">
+                                            <h3 className="text-lg font-bold text-slate-800 dark:text-white">{item.tipo}</h3>
+                                            <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded-lg font-medium">
                                                 {new Date(item.fecha).toLocaleDateString()}
                                             </span>
                                         </div>
-                                        <p className="text-slate-600 mb-2">{item.descripcion}</p>
+                                        <p className="text-slate-600 dark:text-slate-300 mb-2">{item.descripcion}</p>
 
-                                        <div className="flex flex-wrap gap-4 text-sm text-slate-500">
+                                        <div className="flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400">
                                             <div className="flex items-center gap-1">
                                                 <Car className="w-4 h-4" />
                                                 {getVehicleName(item.vehiculo_id)}
@@ -155,8 +155,8 @@ const Maintenance = () => {
                                 </div>
 
                                 <div className="flex flex-col items-end justify-center min-w-[120px]">
-                                    <p className="text-xs text-slate-500 uppercase font-semibold mb-1">COSTO TOTAL</p>
-                                    <p className="text-2xl font-bold text-slate-800">
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold mb-1">COSTO TOTAL</p>
+                                    <p className="text-2xl font-bold text-slate-800 dark:text-white">
                                         ${item.costo_total ? item.costo_total.toFixed(2) : '0.00'}
                                     </p>
                                 </div>

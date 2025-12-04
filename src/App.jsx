@@ -2,6 +2,7 @@ import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { useAuth } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout/Layout';
 import Loading from './components/Loading';
 
@@ -26,32 +27,34 @@ const PrivateRoute = ({ children }) => {
 
 function App() {
   return (
-    <Router>
-      <Toaster position="top-center" richColors />
-      <Suspense fallback={<Loading />}>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+    <ThemeProvider>
+      <Router>
+        <Toaster position="top-center" richColors />
+        <Suspense fallback={<Loading />}>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
 
-          <Route path="/" element={
-            <PrivateRoute>
-              <Layout />
-            </PrivateRoute>
-          }>
-            <Route index element={<Dashboard />} />
-            <Route path="vehicles" element={<Vehicles />} />
-            <Route path="inventory" element={<Inventory />} />
-            <Route path="mechanics" element={<Mechanics />} />
-            <Route path="stores" element={<Stores />} />
-            <Route path="maintenance" element={<Maintenance />} />
-            <Route path="ai-history" element={<AIHistory />} />
-            <Route path="owners" element={<Owners />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="settings" element={<Settings />} />
-          </Route>
-        </Routes>
-      </Suspense>
-    </Router>
+            <Route path="/" element={
+              <PrivateRoute>
+                <Layout />
+              </PrivateRoute>
+            }>
+              <Route index element={<Dashboard />} />
+              <Route path="vehicles" element={<Vehicles />} />
+              <Route path="inventory" element={<Inventory />} />
+              <Route path="mechanics" element={<Mechanics />} />
+              <Route path="stores" element={<Stores />} />
+              <Route path="maintenance" element={<Maintenance />} />
+              <Route path="ai-history" element={<AIHistory />} />
+              <Route path="owners" element={<Owners />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="settings" element={<Settings />} />
+            </Route>
+          </Routes>
+        </Suspense>
+      </Router>
+    </ThemeProvider>
   );
 }
 

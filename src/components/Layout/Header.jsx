@@ -13,14 +13,14 @@ const Header = () => {
     const unreadCount = notifications ? notifications.filter(n => !n.leida).length : 0;
 
     return (
-        <header className="h-16 md:h-20 bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 px-4 md:px-8 flex items-center justify-between">
+        <header className="h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 px-4 md:px-8 flex items-center justify-between transition-colors duration-300">
             <div className="flex items-center gap-4 flex-1 max-w-xl">
                 <div className="relative w-full max-w-[200px] md:max-w-full">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 md:w-5 md:h-5" />
                     <input
                         type="text"
                         placeholder="Buscar..."
-                        className="w-full pl-9 md:pl-10 pr-4 py-2 bg-slate-100 border-none rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all duration-200 text-sm text-slate-700 placeholder:text-slate-400"
+                        className="w-full pl-9 md:pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-slate-700 transition-all duration-200 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400"
                     />
                 </div>
             </div>
@@ -61,8 +61,8 @@ const Header = () => {
                                         >
                                             <div className="flex gap-3">
                                                 <div className={`w-2 h-2 mt-1.5 rounded-full flex-shrink-0 ${notif.tipo === 'alert' ? 'bg-red-500' :
-                                                        notif.tipo === 'warning' ? 'bg-amber-500' :
-                                                            notif.tipo === 'success' ? 'bg-green-500' : 'bg-blue-500'
+                                                    notif.tipo === 'warning' ? 'bg-amber-500' :
+                                                        notif.tipo === 'success' ? 'bg-green-500' : 'bg-blue-500'
                                                     }`}></div>
                                                 <div>
                                                     <h4 className={`text-sm text-slate-800 ${!notif.leida ? 'font-bold' : 'font-medium'}`}>{notif.titulo}</h4>
