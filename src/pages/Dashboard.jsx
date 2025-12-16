@@ -19,6 +19,7 @@ const StatCard = ({ title, value, icon: Icon, color, trend }) => (
 
 const Dashboard = () => {
     const { vehicles, inventory, mechanics, stores, company } = useData();
+    console.log('Dashboard: company loaded', company);
     const { profile } = useAuth();
     console.log('Dashboard: profile loaded', profile);
 
@@ -43,6 +44,12 @@ const Dashboard = () => {
     const vehicleLimitText = vehicleLimit === Infinity ? 'Ilimitado' : `${vehicles.length} / ${vehicleLimit}`;
     const isLimitReached = vehicleLimit !== Infinity && vehicles.length >= vehicleLimit;
 
+    // Format plan name for display (e.g. 'free' -> 'Free', 'standard' -> 'Estándar')
+    const planDisplay = plan === 'free' ? 'Básico' :
+        plan === 'standard' ? 'Estándar' :
+            plan === 'premium' ? 'Premium' :
+                plan === 'taller' ? 'Taller' : plan;
+
     // Combine all items to generate recent activity
     const getAllActivity = () => {
         const activity = [
@@ -66,7 +73,7 @@ const Dashboard = () => {
             value: vehicles.length,
             icon: Car,
             color: isLimitReached ? 'bg-red-500' : 'bg-blue-500',
-            trend: `Plan: ${vehicleLimitText}`
+            trend: `${planDisplay}: ${vehicleLimitText}`
         },
         {
             title: 'Repuestos',

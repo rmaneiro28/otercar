@@ -5,7 +5,7 @@ import { LayoutDashboard, Car, Wrench, Users, Store, Settings, LogOut, FileText,
 import clsx from 'clsx';
 
 const Sidebar = () => {
-    const { profile } = useAuth();
+    const { profile, signOut } = useAuth();
     const isTaller = profile?.rol === 'taller';
 
     const navItems = [
@@ -20,16 +20,16 @@ const Sidebar = () => {
     ];
 
     return (
-        <aside className="w-64 bg-slate-900 dark:bg-slate-950 text-white flex flex-col h-screen fixed left-0 top-0 z-50 transition-all duration-300 border-r border-slate-800 dark:border-slate-800">
-            <div className="p-6 flex items-center gap-3 border-b border-slate-800">
-                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center overflow-hidden">
+        <aside className="w-64 bg-white dark:bg-slate-950 text-slate-800 dark:text-white flex flex-col h-screen fixed left-0 top-0 z-50 transition-all duration-300 border-r border-slate-200 dark:border-slate-800">
+            <div className="p-6 flex items-center gap-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="w-10 h-10 bg-blue-600 dark:bg-white/10 rounded-xl flex items-center justify-center overflow-hidden">
                     <img src="/Isotipo Blanco.png" alt="Logo" className="w-full h-full object-contain p-1" />
                 </div>
                 <div>
-                    <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+                    <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-400 dark:to-purple-400">
                         OterCar
                     </h1>
-                    <p className="text-xs text-slate-400">Mantenimiento Vehicular</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Mantenimiento Vehicular</p>
                 </div>
             </div>
 
@@ -43,7 +43,7 @@ const Sidebar = () => {
                                 'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group',
                                 isActive
                                     ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
-                                    : 'text-slate-400 hover:bg-slate-800 hover:text-white',
+                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-white',
                                 item.path === '/settings' && 'settings-link'
                             )
                         }
@@ -55,8 +55,11 @@ const Sidebar = () => {
             </nav>
 
 
-            <div className="p-4 border-t border-slate-800">
-                <button className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-slate-400 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200">
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800">
+                <button
+                    onClick={signOut}
+                    className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-slate-600 dark:text-slate-400 hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500 dark:hover:text-red-400 transition-all duration-200"
+                >
                     <LogOut className="w-5 h-5" />
                     <span className="font-medium">Cerrar Sesión</span>
                 </button>

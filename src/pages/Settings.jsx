@@ -8,7 +8,7 @@ import { Lock, Bell, Moon, Sun, Globe, Shield, CreditCard, Settings as SettingsI
 
 const Settings = () => {
     const { user } = useAuth();
-    const { company, addVehicle, addClient, addPart, addMechanic, addStore } = useData();
+    const { company, addVehicle, addClient, addPart, addMechanic, addStore, owners, vehicles, inventory, mechanics, stores } = useData();
     const { theme, toggleTheme } = useTheme();
     const [passwordData, setPasswordData] = useState({
         newPassword: '',
@@ -215,21 +215,21 @@ const Settings = () => {
 
                     <div className="grid md:grid-cols-2 gap-4">
                         <div className="p-4 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                            <h3 className="font-medium text-slate-800 dark:text-white mb-2">Descargar Plantilla</h3>
+                            <h3 className="font-medium text-slate-800 dark:text-white mb-2">Exportar Base de Datos</h3>
                             <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-                                Descarga el formato Excel para llenar tus datos de clientes, vehículos e inventario.
+                                Descarga un Excel con todos tus registros actuales (Clientes, Vehículos, Inventario, etc).
                             </p>
                             <button
                                 onClick={() => {
                                     import('../utils/excelHandler').then(module => {
-                                        module.generateTemplate();
-                                        toast.success('Plantilla descargada');
+                                        module.exportDatabase({ owners, vehicles, inventory, mechanics, stores });
+                                        toast.success('Base de datos exportada');
                                     });
                                 }}
                                 className="w-full py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-200 rounded-lg text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
                             >
-                                <CreditCard className="w-4 h-4" /> {/* Using CreditCard as placeholder icon if Download not available */}
-                                Descargar Excel
+                                <CreditCard className="w-4 h-4" />
+                                Descargar Excel Completo
                             </button>
                         </div>
 

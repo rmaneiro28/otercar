@@ -33,6 +33,7 @@ export const DataProvider = ({ children }) => {
             setMaintenance([]);
             setRecommendations([]);
             setNotifications([]);
+            setLoading(false);
         }
     }, [user, profile]);
 
@@ -53,12 +54,10 @@ export const DataProvider = ({ children }) => {
 
             const [vehRes, ownerRes, invRes, mechRes, storeRes, maintRes, recRes, notifRes] = await Promise.all([
                 supabase.from('vehiculos').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
-                // ...
                 supabase.from('propietarios').select('*').eq('empresa_id', empresaId).order('nombre_completo', { ascending: true }), // Fetch clients (propietarios)
                 supabase.from('inventario').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
                 supabase.from('mecanicos').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
                 supabase.from('tiendas').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
-                supabase.from('mantenimientos').select('*').eq('empresa_id', empresaId).order('fecha', { ascending: false }),
                 supabase.from('mantenimientos').select('*').eq('empresa_id', empresaId).order('fecha', { ascending: false }),
                 supabase.from('recomendaciones_ia').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
                 supabase.from('notificaciones').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
@@ -90,6 +89,10 @@ export const DataProvider = ({ children }) => {
 
     // --- Vehicles (Vehiculos) ---
     const addVehicle = async (vehicle) => {
+        if (!profile?.empresa_id) {
+            return { error: { message: 'Error de sesión: No se encontró la empresa asociada.' } };
+        }
+
         // Check Plan Limits
         const plan = company?.plan || 'free';
         const currentCount = vehicles.length;
@@ -105,7 +108,8 @@ export const DataProvider = ({ children }) => {
             ...vehicle,
             empresa_id: profile.empresa_id,
             // If usuario_id was used before, now we map it to propietario_id if it exists in the form
-            propietario_id: vehicle.propietario_id || null
+            propietario_id: vehicle.propietario_id || null,
+            usuario_id: user.id // Add usuario_id to allow RLS visibility
         };
 
         const { data, error } = await supabase.from('vehiculos').insert([vehicleData]).select();
@@ -138,8 +142,33 @@ export const DataProvider = ({ children }) => {
     };
 
     // --- Clients (Propietarios) ---
+    // --- Clients (Propietarios) ---
     const addClient = async (client) => {
-        const { data, error } = await supabase.from('propietarios').insert([{ ...client, empresa_id: profile.empresa_id }]).select();
+        if (!profile?.empresa_id) {
+            return { error: { message: 'Error de sesión: No se encontró la empresa asociada.' } };
+        }
+
+        // --- CHECK LIMITS ---
+        const plan = company?.plan || 'free';
+        const dbLimit = company?.limit_clients; // Custom limit from DB
+        let limit = Infinity;
+
+        if (dbLimit !== undefined && dbLimit !== null) {
+            limit = dbLimit === -1 ? Infinity : dbLimit;
+        } else {
+            // Default Plan Limits
+            if (plan === 'free') limit = 1;
+            else if (plan === 'standard') limit = 3;
+            // Premium/Taller = Infinity
+        }
+
+        if (limit !== Infinity && owners.length >= limit) {
+            const planName = plan === 'free' ? 'Básico' : 'Estándar';
+            return { error: { message: `Tu Plan ${planName} está limitado a ${limit} clientes. Actualiza para agregar más.` } };
+        }
+        // ---------------------
+
+        const { data, error } = await supabase.from('propietarios').insert([{ ...client, usuario_id: user.id, empresa_id: profile.empresa_id }]).select();
         if (error) {
             console.error('Error adding client:', error.message);
             return { error };
@@ -150,6 +179,9 @@ export const DataProvider = ({ children }) => {
 
     // --- Inventory (Inventario) ---
     const addPart = async (part) => {
+        if (!profile?.empresa_id) {
+            return { error: { message: 'Error de sesión: No se encontró la empresa asociada.' } };
+        }
         const { data, error } = await supabase.from('inventario').insert([{ ...part, usuario_id: user.id, empresa_id: profile.empresa_id }]).select();
         if (error) {
             console.error('Error adding part:', error.message);
@@ -181,6 +213,9 @@ export const DataProvider = ({ children }) => {
 
     // --- Mechanics (Mecanicos) ---
     const addMechanic = async (mechanic) => {
+        if (!profile?.empresa_id) {
+            return { error: { message: 'Error de sesión: No se encontró la empresa asociada.' } };
+        }
         const { data, error } = await supabase.from('mecanicos').insert([{ ...mechanic, usuario_id: user.id, empresa_id: profile.empresa_id }]).select();
         if (error) {
             console.error('Error adding mechanic:', error.message);
@@ -212,6 +247,9 @@ export const DataProvider = ({ children }) => {
 
     // --- Stores (Tiendas) ---
     const addStore = async (store) => {
+        if (!profile?.empresa_id) {
+            return { error: { message: 'Error de sesión: No se encontró la empresa asociada.' } };
+        }
         const { data, error } = await supabase.from('tiendas').insert([{ ...store, usuario_id: user.id, empresa_id: profile.empresa_id }]).select();
         if (error) {
             console.error('Error adding store:', error.message);
@@ -243,6 +281,9 @@ export const DataProvider = ({ children }) => {
 
     // --- Maintenance (Mantenimientos) ---
     const addMaintenance = async (maint, parts = []) => {
+        if (!profile?.empresa_id) {
+            return { error: { message: 'Error de sesión: No se encontró la empresa asociada.' } };
+        }
         // 0. Validate Stock (Server-side check)
         if (parts.length > 0) {
             for (const p of parts) {
@@ -324,6 +365,9 @@ export const DataProvider = ({ children }) => {
 
     // --- AI Recommendations ---
     const addRecommendation = async (recommendation) => {
+        if (!profile?.empresa_id) {
+            return { error: { message: 'Error de sesión: No se encontró la empresa asociada.' } };
+        }
         const plan = company?.plan || 'free';
         if (plan === 'free') {
             return { error: { message: 'Tu plan actual no incluye IA. Actualiza a Estándar o Premium.' } };
@@ -360,7 +404,21 @@ export const DataProvider = ({ children }) => {
         setNotifications(notifications.map(n => ({ ...n, leida: true })));
     };
 
+    const addNotification = async (notification) => {
+        if (!profile?.empresa_id) {
+            return { error: { message: 'Error de sesión: No se encontró la empresa asociada.' } };
+        }
+        const { data, error } = await supabase.from('notificaciones').insert([{ ...notification, usuario_id: user.id, empresa_id: profile.empresa_id }]).select();
+        if (error) {
+            console.error('Error adding notification:', error.message);
+            return { error };
+        }
+        setNotifications([data[0], ...notifications]);
+        return { data: data[0] };
+    }
+
     const value = {
+        company,
         vehicles, addVehicle, updateVehicle, deleteVehicle,
         owners, addClient, // Expose owners and addClient
         inventory, addPart, updatePart, deletePart,
@@ -368,7 +426,7 @@ export const DataProvider = ({ children }) => {
         stores, addStore, updateStore, deleteStore,
         maintenance, addMaintenance,
         recommendations, addRecommendation,
-        notifications, markNotificationAsRead, markAllNotificationsAsRead,
+        notifications, addNotification, markNotificationAsRead, markAllNotificationsAsRead,
         loading
     };
 

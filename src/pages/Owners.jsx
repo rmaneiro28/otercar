@@ -4,10 +4,13 @@ import { Users, Search, Shield, Mail, Phone, Plus, X, Save } from 'lucide-react'
 import Modal from '../components/UI/Modal';
 import { toast } from 'sonner';
 
+import UpgradeModal from '../components/UI/UpgradeModal';
+
 const Owners = () => {
-    const { owners, addClient } = useData();
+    const { owners, addClient, company } = useData();
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isUpgradeModalOpen, setIsUpgradeModalOpen] = useState(false);
     const [newClient, setNewClient] = useState({
         nombre_completo: '',
         email: '',
@@ -24,7 +27,12 @@ const Owners = () => {
         e.preventDefault();
         const result = await addClient(newClient);
         if (result && result.error) {
-            toast.error('Error al agregar cliente');
+            if (result.error.message && result.error.message.includes('limitado')) {
+                setIsModalOpen(false);
+                setIsUpgradeModalOpen(true);
+            } else {
+                toast.error(result.error.message || 'Error al agregar cliente');
+            }
         } else {
             toast.success('Cliente agregado correctamente');
             setIsModalOpen(false);
@@ -176,6 +184,12 @@ const Owners = () => {
                     </div>
                 </form>
             </Modal>
+
+            <UpgradeModal
+                isOpen={isUpgradeModalOpen}
+                onClose={() => setIsUpgradeModalOpen(false)}
+                currentPlan={company?.plan || 'free'}
+            />
         </div>
     );
 };

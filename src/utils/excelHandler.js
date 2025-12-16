@@ -229,3 +229,82 @@ export const processImport = async (data, contextFunctions) => {
 
     return { results, errors };
 };
+
+export const exportDatabase = ({ owners, vehicles, inventory, mechanics, stores }) => {
+    const wb = XLSX.utils.book_new();
+
+    // 1. Clients (Propietarios)
+    // Transform data to ensure it matches the template and cleans up Supabase fields
+    const clientsData = owners.map(client => ({
+        nombre_completo: client.nombre_completo,
+        email: client.email,
+        telefono: client.telefono,
+        direccion: client.direccion,
+        // Optional: Keep ID if we want to re-import smartly later, but template doesn't specify it.
+        // For backup purposes, maybe good to keep hidden or implicit.
+        // Let's stick to the visible text format for now as requested "campos actualizados"
+    }));
+    const wsClients = XLSX.utils.json_to_sheet(clientsData);
+    XLSX.utils.book_append_sheet(wb, wsClients, 'Clientes');
+
+    // 2. Vehicles
+    // Need to map owner_id back to email for meaningful export?
+    // Or just export as is. The user asked "manteniendo los datos".
+    // If I export owner_id, it's useless for manual reading.
+    // Let's try to map owner_id to email if possible.
+    // But wait, the input 'vehicles' comes from DataContext which usually has raw data.
+    // 'owners' is also passed. I can create a map.
+    const ownerMap = new Map(owners.map(o => [o.id, o.email]));
+
+    const vehiclesData = vehicles.map(v => ({
+        marca: v.marca,
+        modelo: v.modelo,
+        placa: v.placa,
+        anio: v.anio,
+        color: v.color,
+        kilometraje: v.kilometraje,
+        vin: v.vin,
+        propietario_email: ownerMap.get(v.propietario_id) || 'N/A'
+    }));
+    const wsVehicles = XLSX.utils.json_to_sheet(vehiclesData);
+    XLSX.utils.book_append_sheet(wb, wsVehicles, 'Vehiculos');
+
+    // 3. Inventory
+    const inventoryData = inventory.map(i => ({
+        nombre: i.nombre,
+        marca: i.marca,
+        modelo: i.modelo,
+        cantidad: i.cantidad,
+        precio: i.precio,
+        ubicacion: i.ubicacion,
+        codigo_referencia: i.codigo_referencia,
+        min_stock: i.min_stock
+    }));
+    const wsInventory = XLSX.utils.json_to_sheet(inventoryData);
+    XLSX.utils.book_append_sheet(wb, wsInventory, 'Inventario');
+
+    // 4. Mechanics
+    const mechanicsData = mechanics.map(m => ({
+        nombre: m.nombre,
+        especialidad: m.especialidad,
+        telefono: m.telefono,
+        email: m.email
+    }));
+    const wsMechanics = XLSX.utils.json_to_sheet(mechanicsData);
+    XLSX.utils.book_append_sheet(wb, wsMechanics, 'Mecanicos');
+
+    // 5. Stores
+    const storesData = stores.map(s => ({
+        nombre: s.nombre,
+        telefono: s.telefono,
+        direccion: s.direccion,
+        sitio_web: s.sitio_web,
+        notas: s.notas
+    }));
+    const wsStores = XLSX.utils.json_to_sheet(storesData);
+    XLSX.utils.book_append_sheet(wb, wsStores, 'Tiendas');
+
+    // Generate filename with date
+    const date = new Date().toISOString().split('T')[0];
+    XLSX.writeFile(wb, `OterCar_Backup_${date}.xlsx`);
+};

@@ -5,7 +5,7 @@ import { generateMaintenanceInsight } from '../../services/aiService';
 import { toast } from 'sonner';
 
 const AIRecommendations = ({ vehicle }) => {
-    const { maintenance, addRecommendation, recommendations } = useData();
+    const { maintenance, addRecommendation, recommendations, addNotification } = useData();
     const [loading, setLoading] = useState(false);
 
     // Filter recommendations for this vehicle
@@ -32,7 +32,31 @@ const AIRecommendations = ({ vehicle }) => {
 
             if (error) throw error;
 
-            toast.success('Análisis completado con éxito');
+            // --- AUTOMATIC NOTIFICATION GENERATION ---
+            const priority = insight.prioridad ? insight.prioridad.toLowerCase() : '';
+            console.log('AI Insight Priority:', priority); // Debugging
+
+            if (['alta', 'high', 'media', 'medium'].includes(priority)) {
+                console.log('Generating Notification...');
+                const notifType = (priority === 'alta' || priority === 'high') ? 'alert' : 'warning';
+
+                const { error: notifError } = await addNotification({
+                    titulo: `Alerta IA: ${insight.recomendacion}`,
+                    mensaje: `Prioridad: ${insight.prioridad}. Estimado: ${insight.estimado}.`,
+                    tipo: notifType,
+                    leida: false
+                });
+
+                if (notifError) {
+                    console.error('Notification Error:', notifError);
+                    toast.error('Error al guardar la notificación');
+                } else {
+                    toast.success('⚠️ Alerta de Mantenimiento Generada');
+                }
+            } else {
+                toast.success('Análisis completado (Sin alertas críticas)');
+            }
+
         } catch (error) {
             console.error(error);
             toast.error('Error al generar el análisis. Verifica que Ollama esté corriendo.');

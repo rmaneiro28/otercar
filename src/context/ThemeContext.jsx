@@ -1,10 +1,14 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { useAuth } from './AuthContext';
+import { supabase } from '../supabaseClient';
 
 const ThemeContext = createContext();
 
 export const useTheme = () => useContext(ThemeContext);
 
 export const ThemeProvider = ({ children }) => {
+    const { user, profile } = useAuth();
+
     const [theme, setTheme] = useState(() => {
         // Check local storage first
         const savedTheme = localStorage.getItem('theme');
@@ -18,6 +22,16 @@ export const ThemeProvider = ({ children }) => {
         return 'light';
     });
 
+    // Valid themes
+    const validThemes = ['light', 'dark'];
+
+    useEffect(() => {
+        // Sync with profile if available
+        if (profile?.theme && validThemes.includes(profile.theme) && profile.theme !== theme) {
+            setTheme(profile.theme);
+        }
+    }, [profile]);
+
     useEffect(() => {
         const root = window.document.documentElement;
 
@@ -30,8 +44,22 @@ export const ThemeProvider = ({ children }) => {
         localStorage.setItem('theme', theme);
     }, [theme]);
 
-    const toggleTheme = () => {
-        setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    const toggleTheme = async () => {
+        const newTheme = theme === 'light' ? 'dark' : 'light';
+        setTheme(newTheme);
+
+        if (user) {
+            try {
+                const { error } = await supabase
+                    .from('perfiles')
+                    .update({ theme: newTheme })
+                    .eq('id', user.id);
+
+                if (error) console.error('Error syncing theme:', error);
+            } catch (err) {
+                console.error('Error syncing theme:', err);
+            }
+        }
     };
 
     const setMode = (mode) => {

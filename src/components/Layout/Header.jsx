@@ -25,11 +25,25 @@ const Header = () => {
                 </div>
             </div>
 
-            <div className="flex items-center gap-3 md:gap-6">
+            {/* Invisible Backdrop for Click Outside */}
+            {(showNotifications || showUserMenu) && (
+                <div
+                    className="fixed inset-0 z-40 bg-transparent"
+                    onClick={() => {
+                        setShowNotifications(false);
+                        setShowUserMenu(false);
+                    }}
+                ></div>
+            )}
+
+            <div className="flex items-center gap-3 md:gap-6 z-50">
                 {/* Notifications */}
                 <div className="relative">
                     <button
-                        onClick={() => setShowNotifications(!showNotifications)}
+                        onClick={() => {
+                            setShowNotifications(!showNotifications);
+                            setShowUserMenu(false);
+                        }}
                         className="relative p-2 text-slate-400 hover:text-blue-600 transition-colors"
                     >
                         <Bell className="w-5 h-5 md:w-6 md:h-6" />
@@ -41,12 +55,12 @@ const Header = () => {
                     </button>
 
                     {showNotifications && (
-                        <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50">
-                            <div className="p-4 border-b border-slate-100 flex justify-between items-center">
-                                <h3 className="font-semibold text-slate-800">Notificaciones</h3>
+                        <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden z-50">
+                            <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+                                <h3 className="font-semibold text-slate-800 dark:text-white">Notificaciones</h3>
                                 <button
                                     onClick={markAllNotificationsAsRead}
-                                    className="text-xs text-blue-600 font-medium cursor-pointer hover:underline"
+                                    className="text-xs text-blue-600 dark:text-blue-400 font-medium cursor-pointer hover:underline"
                                 >
                                     Marcar leídas
                                 </button>
@@ -57,7 +71,7 @@ const Header = () => {
                                         <div
                                             key={notif.id}
                                             onClick={() => markNotificationAsRead(notif.id)}
-                                            className={`p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer ${!notif.leida ? 'bg-blue-50/50' : ''}`}
+                                            className={`p-4 border-b border-slate-50 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer ${!notif.leida ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
                                         >
                                             <div className="flex gap-3">
                                                 <div className={`w-2 h-2 mt-1.5 rounded-full flex-shrink-0 ${notif.tipo === 'alert' ? 'bg-red-500' :
@@ -65,9 +79,9 @@ const Header = () => {
                                                         notif.tipo === 'success' ? 'bg-green-500' : 'bg-blue-500'
                                                     }`}></div>
                                                 <div>
-                                                    <h4 className={`text-sm text-slate-800 ${!notif.leida ? 'font-bold' : 'font-medium'}`}>{notif.titulo}</h4>
-                                                    <p className="text-xs text-slate-500 mt-1">{notif.mensaje}</p>
-                                                    <p className="text-[10px] text-slate-400 mt-2">
+                                                    <h4 className={`text-sm text-slate-800 dark:text-white ${!notif.leida ? 'font-bold' : 'font-medium'}`}>{notif.titulo}</h4>
+                                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{notif.mensaje}</p>
+                                                    <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-2">
                                                         {new Date(notif.created_at).toLocaleString()}
                                                     </p>
                                                 </div>
@@ -75,7 +89,7 @@ const Header = () => {
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="p-8 text-center text-slate-400 text-sm">
+                                    <div className="p-8 text-center text-slate-400 dark:text-slate-500 text-sm">
                                         No tienes notificaciones
                                     </div>
                                 )}
@@ -87,29 +101,34 @@ const Header = () => {
                 {/* User Menu */}
                 <div className="relative">
                     <button
-                        onClick={() => setShowUserMenu(!showUserMenu)}
-                        className="flex items-center gap-3 pl-3 md:pl-6 border-l border-slate-200"
+                        onClick={() => {
+                            setShowUserMenu(!showUserMenu);
+                            setShowNotifications(false);
+                        }}
+                        className="flex items-center gap-3 pl-3 md:pl-6 border-l border-slate-200 dark:border-slate-700"
                     >
                         <div className="text-right hidden md:block">
-                            <p className="text-sm font-semibold text-slate-700">{profile?.nombre_completo || user?.email}</p>
-                            <p className="text-xs text-slate-500 capitalize">{profile?.rol || 'Usuario'}</p>
+                            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                                {profile?.nombre_completo || user?.email}
+                            </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">{profile?.rol || 'Usuario'}</p>
                         </div>
-                        <div className="w-8 h-8 md:w-10 md:h-10 bg-slate-200 rounded-full flex items-center justify-center overflow-hidden border-2 border-white shadow-sm hover:ring-2 hover:ring-blue-500/20 transition-all">
-                            <User className="w-5 h-5 md:w-6 md:h-6 text-slate-400" />
+                        <div className="w-8 h-8 md:w-10 md:h-10 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center overflow-hidden border-2 border-white dark:border-slate-600 shadow-sm hover:ring-2 hover:ring-blue-500/20 transition-all">
+                            <User className="w-5 h-5 md:w-6 md:h-6 text-slate-400 dark:text-slate-300" />
                         </div>
                     </button>
 
                     {showUserMenu && (
-                        <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden z-50">
-                            <div className="p-4 border-b border-slate-100 md:hidden">
-                                <p className="text-sm font-semibold text-slate-700">{profile?.nombre_completo || user?.email}</p>
-                                <p className="text-xs text-slate-500 capitalize">{profile?.rol || 'Usuario'}</p>
+                        <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden z-50">
+                            <div className="p-4 border-b border-slate-100 dark:border-slate-800 md:hidden">
+                                <p className="text-sm font-semibold text-slate-700 dark:text-white">{profile?.nombre_completo || user?.email}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">{profile?.rol || 'Usuario'}</p>
                             </div>
                             <div className="p-2">
                                 <Link
                                     to="/profile"
                                     onClick={() => setShowUserMenu(false)}
-                                    className="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                                    className="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                                 >
                                     <UserCircle className="w-4 h-4" />
                                     <span className="text-sm font-medium">Mi Perfil</span>
@@ -117,15 +136,15 @@ const Header = () => {
                                 <Link
                                     to="/settings"
                                     onClick={() => setShowUserMenu(false)}
-                                    className="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                                    className="flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                                 >
                                     <Settings className="w-4 h-4" />
                                     <span className="text-sm font-medium">Configuración</span>
                                 </Link>
-                                <div className="h-px bg-slate-100 my-1"></div>
+                                <div className="h-px bg-slate-100 dark:bg-slate-800 my-1"></div>
                                 <button
                                     onClick={signOut}
-                                    className="flex items-center gap-3 px-3 py-2 rounded-xl text-red-500 hover:bg-red-50 transition-colors w-full text-left"
+                                    className="flex items-center gap-3 px-3 py-2 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors w-full text-left"
                                 >
                                     <LogOut className="w-4 h-4" />
                                     <span className="text-sm font-medium">Cerrar Sesión</span>
