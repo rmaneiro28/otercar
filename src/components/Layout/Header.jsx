@@ -6,22 +6,97 @@ import { Link } from 'react-router-dom';
 
 const Header = () => {
     const { user, profile, signOut } = useAuth();
-    const { notifications, markNotificationAsRead, markAllNotificationsAsRead } = useData();
+    const { notifications, markNotificationAsRead, markAllNotificationsAsRead, vehicles, inventory, mechanics } = useData();
     const [showNotifications, setShowNotifications] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
 
+    // Search State
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchResults, setSearchResults] = useState({ vehicles: [], inventory: [], mechanics: [] });
+    const [showSearch, setShowSearch] = useState(false);
+
     const unreadCount = notifications ? notifications.filter(n => !n.leida).length : 0;
+
+    const handleSearch = (e) => {
+        const query = e.target.value;
+        setSearchQuery(query);
+
+        if (query.length > 1) {
+            const lowerQ = query.toLowerCase();
+            const foundVehicles = vehicles?.filter(v =>
+                v.marca.toLowerCase().includes(lowerQ) ||
+                v.modelo.toLowerCase().includes(lowerQ) ||
+                v.placa.toLowerCase().includes(lowerQ)
+            ).slice(0, 3) || [];
+
+            const foundInventory = inventory?.filter(i =>
+                i.nombre.toLowerCase().includes(lowerQ) ||
+                i.codigo?.toLowerCase().includes(lowerQ)
+            ).slice(0, 3) || [];
+
+            const foundMechanics = mechanics?.filter(m =>
+                m.nombre.toLowerCase().includes(lowerQ)
+            ).slice(0, 3) || [];
+
+            setSearchResults({ vehicles: foundVehicles, inventory: foundInventory, mechanics: foundMechanics });
+            setShowSearch(true);
+        } else {
+            setShowSearch(false);
+        }
+    };
 
     return (
         <header className="h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 px-4 md:px-8 flex items-center justify-between transition-colors duration-300">
-            <div className="flex items-center gap-4 flex-1 max-w-xl">
+            <div className="flex items-center gap-4 flex-1 max-w-xl relative">
                 <div className="relative w-full max-w-[200px] md:max-w-full">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 md:w-5 md:h-5" />
                     <input
                         type="text"
-                        placeholder="Buscar..."
+                        value={searchQuery}
+                        onChange={handleSearch}
+                        onFocus={() => searchQuery.length > 1 && setShowSearch(true)}
+                        onBlur={() => setTimeout(() => setShowSearch(false), 200)} // Delay to allow click
+                        placeholder="Buscar vehículo, repuesto..."
                         className="w-full pl-9 md:pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-slate-700 transition-all duration-200 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400"
                     />
+
+                    {/* Search Results Dropdown */}
+                    {showSearch && (
+                        <div className="absolute top-full left-0 w-full mt-2 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden z-50">
+                            {/* Vehicles Section */}
+                            {searchResults.vehicles.length > 0 && (
+                                <div className="p-2">
+                                    <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase px-2 mb-1">Vehículos</h4>
+                                    {searchResults.vehicles.map(v => (
+                                        <Link key={v.id} to="/vehicles" className="block px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg">
+                                            <p className="text-sm font-bold text-slate-800 dark:text-white">{v.marca} {v.modelo}</p>
+                                            <p className="text-xs text-slate-500">{v.placa}</p>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Inventory Section */}
+                            {searchResults.inventory.length > 0 && (
+                                <div className="p-2 border-t border-slate-100 dark:border-slate-800">
+                                    <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase px-2 mb-1">Inventario</h4>
+                                    {searchResults.inventory.map(i => (
+                                        <Link key={i.id} to="/inventory" className="block px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg">
+                                            <p className="text-sm font-bold text-slate-800 dark:text-white">{i.nombre}</p>
+                                            <p className="text-xs text-slate-500">{i.codigo || 'Sin código'}</p>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Empty State */}
+                            {Object.values(searchResults).every(arr => arr.length === 0) && (
+                                <div className="p-4 text-center text-slate-400 text-sm">
+                                    No se encontraron resultados
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Sparkles, RefreshCw, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { Sparkles, RefreshCw, AlertTriangle, CheckCircle, Clock, Trash2 } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { generateMaintenanceInsight } from '../../services/aiService';
 import { toast } from 'sonner';
 
 const AIRecommendations = ({ vehicle }) => {
-    const { maintenance, addRecommendation, recommendations, addNotification } = useData();
+    const { maintenance, addRecommendation, recommendations, addNotification, deleteRecommendation, inventory } = useData();
     const [loading, setLoading] = useState(false);
 
     // Filter recommendations for this vehicle
@@ -18,8 +18,8 @@ const AIRecommendations = ({ vehicle }) => {
             // Get maintenance history for this vehicle
             const history = maintenance.filter(m => m.vehiculo_id === vehicle.id);
 
-            // Call AI Service
-            const insight = await generateMaintenanceInsight(vehicle, history);
+            // Call AI Service with INVENTORY
+            const insight = await generateMaintenanceInsight(vehicle, history, inventory);
 
             // Save to database
             const newRec = {
@@ -42,7 +42,7 @@ const AIRecommendations = ({ vehicle }) => {
 
                 const { error: notifError } = await addNotification({
                     titulo: `Alerta IA: ${insight.recomendacion}`,
-                    mensaje: `Prioridad: ${insight.prioridad}. Estimado: ${insight.estimado}.`,
+                    mensaje: `Prioridad: ${insight.prioridad}. Estimado: ${insight.estimado}. Costo Est: $${insight.costo_estimado || '?'}`,
                     tipo: notifType,
                     leida: false
                 });
@@ -54,23 +54,31 @@ const AIRecommendations = ({ vehicle }) => {
                     toast.success('⚠️ Alerta de Mantenimiento Generada');
                 }
             } else {
-                toast.success('Análisis completado (Sin alertas críticas)');
+                toast.success('Análisis completado');
             }
 
         } catch (error) {
             console.error(error);
-            toast.error('Error al generar el análisis. Verifica que Ollama esté corriendo.');
+            toast.error('Error al generar el análisis.');
         } finally {
             setLoading(false);
         }
     };
 
-    const parseContent = (content) => {
-        try {
-            return typeof content === 'string' ? JSON.parse(content) : content;
-        } catch (e) {
-            return null;
+    const handleDelete = async () => {
+        if (!latestRecommendation) return;
+        if (confirm('¿Estás seguro de eliminar este análisis?')) {
+            const { error } = await deleteRecommendation(latestRecommendation.id);
+            if (error) {
+                toast.error('Error al eliminar');
+            } else {
+                toast.success('Análisis eliminado');
+            }
         }
+    };
+
+    const parseContent = (content) => {
+        try { return typeof content === 'string' ? JSON.parse(content) : content; } catch { return null; }
     };
 
     const recData = latestRecommendation ? parseContent(latestRecommendation.contenido) : null;
@@ -83,8 +91,8 @@ const AIRecommendations = ({ vehicle }) => {
                         <Sparkles className="w-5 h-5" />
                     </div>
                     <div>
-                        <h3 className="font-bold text-indigo-900">IA Assistant</h3>
-                        <p className="text-xs text-indigo-600">Powered by Llama 3</p>
+                        <h3 className="font-bold text-indigo-900">IA Assistant + Presupuesto</h3>
+                        <p className="text-xs text-indigo-600">Análisis Técnico y Financiero</p>
                     </div>
                 </div>
                 <button
@@ -103,21 +111,56 @@ const AIRecommendations = ({ vehicle }) => {
 
             {recData ? (
                 <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="bg-white/60 backdrop-blur-sm rounded-xl p-4 border border-indigo-100">
-                        <div className="flex items-center gap-2 mb-2">
-                            <span className={`text-xs font-bold px-2 py-0.5 rounded-full uppercase
-                                ${recData.prioridad === 'Alta' ? 'bg-red-100 text-red-600' :
-                                    recData.prioridad === 'Media' ? 'bg-orange-100 text-orange-600' :
-                                        'bg-green-100 text-green-600'}`}>
-                                Prioridad {recData.prioridad}
-                            </span>
-                            <span className="text-xs text-slate-500 flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                Estimado: {recData.estimado}
-                            </span>
+                    <div className="bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-indigo-100 relative overflow-hidden">
+                        {/* Status Badge */}
+                        <div className="flex justify-between items-start mb-3">
+                            <div className="flex items-center gap-2">
+                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full uppercase
+                                    ${recData.prioridad === 'Alta' ? 'bg-red-100 text-red-600' :
+                                        recData.prioridad === 'Media' ? 'bg-orange-100 text-orange-600' :
+                                            'bg-green-100 text-green-600'}`}>
+                                    {recData.prioridad}
+                                </span>
+                                <span className="text-xs text-slate-500 flex items-center gap-1">
+                                    <Clock className="w-3 h-3" />
+                                    {recData.estimado}
+                                </span>
+                            </div>
+                            {/* COST BADGE */}
+                            {recData.costo_estimado > 0 && (
+                                <div className="bg-green-100 text-green-700 px-3 py-1 rounded-lg border border-green-200 shadow-sm">
+                                    <p className="text-[10px] font-bold uppercase tracking-wider text-green-600">Presupuesto Est.</p>
+                                    <p className="text-lg font-black">${recData.costo_estimado}</p>
+                                </div>
+                            )}
                         </div>
-                        <h4 className="font-bold text-slate-800 mb-1">{recData.recomendacion}</h4>
-                        <p className="text-sm text-slate-600 leading-relaxed">{recData.detalle}</p>
+
+                        <h4 className="font-bold text-slate-800 mb-2 text-lg">{recData.recomendacion}</h4>
+                        <p className="text-sm text-slate-600 leading-relaxed mb-3">{recData.detalle}</p>
+
+                        {/* Suggested Parts */}
+                        {recData.partes_sugeridas && recData.partes_sugeridas.length > 0 && (
+                            <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
+                                <p className="text-xs font-bold text-slate-500 mb-2 uppercase">Repuestos Sugeridos (En Stock)</p>
+                                <ul className="text-xs text-slate-700 space-y-1">
+                                    {recData.partes_sugeridas.map((part, idx) => (
+                                        <li key={idx} className="flex items-center gap-2">
+                                            <CheckCircle className="w-3 h-3 text-green-500" />
+                                            {part}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        )}
+
+                        <div className="mt-4 flex justify-end">
+                            <button
+                                onClick={handleDelete}
+                                className="text-xs flex items-center gap-1 text-red-400 hover:text-red-600 transition-colors"
+                            >
+                                <Trash2 className="w-3 h-3" /> Eliminar
+                            </button>
+                        </div>
                     </div>
 
                     {latestRecommendation && (

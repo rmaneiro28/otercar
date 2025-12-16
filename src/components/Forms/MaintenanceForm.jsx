@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useData } from '../../context/DataContext';
-import { Plus, Trash2, Save, X, Car, Wrench, DollarSign, Calendar } from 'lucide-react';
+import { Plus, Trash2, Save, X, Car, Wrench, DollarSign, Calendar, Mic, Loader2 } from 'lucide-react';
+import { parseMaintenanceVoice } from '../../services/aiService';
+import { toast } from 'sonner';
 
 const MaintenanceForm = ({ onSubmit, onCancel }) => {
     const { vehicles, mechanics, inventory } = useData();
+    const [isListening, setIsListening] = useState(false);
+    const [isProcessingVoice, setIsProcessingVoice] = useState(false);
 
     // Main form state
     const [formData, setFormData] = useState({
@@ -61,6 +65,57 @@ const MaintenanceForm = ({ onSubmit, onCancel }) => {
         setSelectedParts(selectedParts.filter(p => p.id !== id));
     };
 
+    const handleVoiceInput = () => {
+        if (!('webkitSpeechRecognition' in window)) {
+            toast.error('Tu navegador no soporta entrada de voz.');
+            return;
+        }
+
+        const recognition = new window.webkitSpeechRecognition();
+        recognition.lang = 'es-ES';
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        recognition.onstart = () => {
+            setIsListening(true);
+            toast.info('Escuchando... Di los detalles del mantenimiento.');
+        };
+
+        recognition.onend = () => setIsListening(false);
+
+        recognition.onresult = async (event) => {
+            const transcript = event.results[0][0].transcript;
+            setIsProcessingVoice(true);
+            toast.loading('Procesando voz con IA...');
+
+            try {
+                const aiData = await parseMaintenanceVoice(transcript);
+                if (aiData) {
+                    setFormData(prev => ({
+                        ...prev,
+                        tipo: aiData.tipo || prev.tipo,
+                        descripcion: aiData.descripcion || transcript,
+                        kilometraje: aiData.kilometraje || prev.kilometraje,
+                        costo_mano_obra: aiData.costo_estimado || prev.costo_mano_obra
+                    }));
+                    toast.dismiss();
+                    toast.success('¡Datos completados por voz!');
+                } else {
+                    toast.dismiss();
+                    toast.error('No se pudo interpretar el audio.');
+                }
+            } catch (error) {
+                console.error(error);
+                // Show the specific error message from aiService if available
+                toast.error(error.message === 'Error IA' ? 'Error al procesar voz.' : error.message);
+            } finally {
+                setIsProcessingVoice(false);
+            }
+        };
+
+        recognition.start();
+    };
+
     const handleSubmit = (e) => {
         e.preventDefault();
 
@@ -74,10 +129,30 @@ const MaintenanceForm = ({ onSubmit, onCancel }) => {
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Voice Assistant Button - High Visibility */}
+            <div className="flex justify-end bg-purple-50 p-4 rounded-xl border border-purple-100 flex items-center justify-between">
+                <div>
+                    <h3 className="font-bold text-purple-900 text-sm">Asistente de Voz IA</h3>
+                    <p className="text-xs text-purple-700 hidden sm:block">Dicta el diagnóstico y la IA llenará el formulario.</p>
+                </div>
+                <button
+                    type="button"
+                    onClick={handleVoiceInput}
+                    disabled={isListening || isProcessingVoice}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold shadow-sm transition-all ${isListening
+                        ? 'bg-red-500 text-white animate-pulse'
+                        : 'bg-purple-600 text-white hover:bg-purple-700'
+                        }`}
+                >
+                    {isProcessingVoice ? <Loader2 className="w-5 h-5 animate-spin" /> : <Mic className={`w-5 h-5 ${isListening ? 'animate-ping' : ''}`} />}
+                    {isListening ? 'Escuchando...' : isProcessingVoice ? 'Procesando...' : 'Dictar Diagnóstico'}
+                </button>
+            </div>
+
             {/* Header Info */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Vehículo</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Vehículo</label>
                     <div className="relative">
                         <Car className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                         <select
@@ -85,7 +160,7 @@ const MaintenanceForm = ({ onSubmit, onCancel }) => {
                             value={formData.vehiculo_id}
                             onChange={handleChange}
                             required
-                            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-800 dark:text-white"
                         >
                             <option value="">Seleccionar Vehículo</option>
                             {vehicles.map(v => (
@@ -96,7 +171,7 @@ const MaintenanceForm = ({ onSubmit, onCancel }) => {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Mecánico</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Mecánico</label>
                     <div className="relative">
                         <Wrench className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                         <select
@@ -104,7 +179,7 @@ const MaintenanceForm = ({ onSubmit, onCancel }) => {
                             value={formData.mecanico_id}
                             onChange={handleChange}
                             required
-                            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-800 dark:text-white"
                         >
                             <option value="">Seleccionar Mecánico</option>
                             {mechanics.map(m => (
@@ -115,12 +190,12 @@ const MaintenanceForm = ({ onSubmit, onCancel }) => {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Tipo de Servicio</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Tipo de Servicio</label>
                     <select
                         name="tipo"
                         value={formData.tipo}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-800 dark:text-white"
                     >
                         <option value="Mantenimiento Preventivo">Mantenimiento Preventivo</option>
                         <option value="Reparación Correctiva">Reparación Correctiva</option>
@@ -130,7 +205,7 @@ const MaintenanceForm = ({ onSubmit, onCancel }) => {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Fecha</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Fecha</label>
                     <div className="relative">
                         <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                         <input
@@ -139,25 +214,25 @@ const MaintenanceForm = ({ onSubmit, onCancel }) => {
                             value={formData.fecha}
                             onChange={handleChange}
                             required
-                            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-800 dark:text-white"
                         />
                     </div>
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Kilometraje Actual</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Kilometraje Actual</label>
                     <input
                         type="number"
                         name="kilometraje"
                         value={formData.kilometraje}
                         onChange={handleChange}
                         placeholder="Ej: 50000"
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-800 dark:text-white"
                     />
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Costo Mano de Obra ($)</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Costo Mano de Obra ($)</label>
                     <div className="relative">
                         <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                         <input
@@ -167,28 +242,28 @@ const MaintenanceForm = ({ onSubmit, onCancel }) => {
                             onChange={handleChange}
                             min="0"
                             step="0.01"
-                            className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-800 dark:text-white"
                         />
                     </div>
                 </div>
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Descripción del Trabajo</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Descripción del Trabajo</label>
                 <textarea
                     name="descripcion"
                     value={formData.descripcion}
                     onChange={handleChange}
                     rows="2"
                     required
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none"
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none text-slate-800 dark:text-white"
                     placeholder="Detalles de lo realizado..."
                 ></textarea>
             </div>
 
             {/* Parts Selection Section */}
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                <h3 className="text-sm font-bold text-slate-700 uppercase mb-3 flex items-center gap-2">
+            <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
+                <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase mb-3 flex items-center gap-2">
                     <Wrench className="w-4 h-4" />
                     Repuestos Utilizados
                 </h3>
@@ -197,7 +272,7 @@ const MaintenanceForm = ({ onSubmit, onCancel }) => {
                     <select
                         value={currentPartId}
                         onChange={(e) => setCurrentPartId(e.target.value)}
-                        className="flex-1 px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                        className="flex-1 px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-slate-800 dark:text-white"
                     >
                         <option value="">Seleccionar Repuesto</option>
                         {inventory.map(p => (
@@ -211,7 +286,7 @@ const MaintenanceForm = ({ onSubmit, onCancel }) => {
                         value={currentPartQty}
                         onChange={(e) => setCurrentPartQty(e.target.value)}
                         min="1"
-                        className="w-20 px-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none"
+                        className="w-20 px-4 py-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-slate-800 dark:text-white"
                     />
                     <button
                         type="button"
@@ -226,15 +301,15 @@ const MaintenanceForm = ({ onSubmit, onCancel }) => {
                 {selectedParts.length > 0 ? (
                     <div className="space-y-2">
                         {selectedParts.map(part => (
-                            <div key={part.id} className="flex justify-between items-center bg-white p-3 rounded-xl border border-slate-100 shadow-sm">
+                            <div key={part.id} className="flex justify-between items-center bg-white dark:bg-slate-700 p-3 rounded-xl border border-slate-100 dark:border-slate-600 shadow-sm">
                                 <div>
-                                    <p className="font-medium text-slate-800">{part.nombre}</p>
-                                    <p className="text-xs text-slate-500">
+                                    <p className="font-medium text-slate-800 dark:text-white">{part.nombre}</p>
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
                                         {part.cantidad_usada} x ${part.precio}
                                     </p>
                                 </div>
                                 <div className="flex items-center gap-4">
-                                    <p className="font-bold text-slate-700">
+                                    <p className="font-bold text-slate-700 dark:text-slate-200">
                                         ${(part.cantidad_usada * part.precio).toFixed(2)}
                                     </p>
                                     <button
@@ -247,9 +322,9 @@ const MaintenanceForm = ({ onSubmit, onCancel }) => {
                                 </div>
                             </div>
                         ))}
-                        <div className="flex justify-between items-center pt-2 border-t border-slate-200 mt-2">
-                            <p className="text-sm font-medium text-slate-600">Subtotal Repuestos:</p>
-                            <p className="font-bold text-slate-800">${partsTotal.toFixed(2)}</p>
+                        <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-700 mt-2">
+                            <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Subtotal Repuestos:</p>
+                            <p className="font-bold text-slate-800 dark:text-white">${partsTotal.toFixed(2)}</p>
                         </div>
                     </div>
                 ) : (
@@ -258,17 +333,17 @@ const MaintenanceForm = ({ onSubmit, onCancel }) => {
             </div>
 
             {/* Grand Total */}
-            <div className="flex justify-between items-center bg-blue-50 p-4 rounded-2xl border border-blue-100">
-                <p className="text-lg font-bold text-blue-800">Costo Total Estimado</p>
-                <p className="text-2xl font-bold text-blue-600">${grandTotal.toFixed(2)}</p>
+            <div className="flex justify-between items-center bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-800">
+                <p className="text-lg font-bold text-blue-800 dark:text-blue-300">Costo Total Estimado</p>
+                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">${grandTotal.toFixed(2)}</p>
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors font-medium flex items-center gap-2"
+                    className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors font-medium flex items-center gap-2"
                 >
                     <X className="w-4 h-4" />
                     Cancelar

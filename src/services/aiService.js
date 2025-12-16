@@ -10,32 +10,43 @@ const getHeaders = () => ({
   'Authorization': `Bearer ${import.meta.env.VITE_GROQ_API_KEY}`
 });
 
-export const generateMaintenanceInsight = async (vehicle, maintenanceHistory) => {
+export const generateMaintenanceInsight = async (vehicle, maintenanceHistory, inventory = []) => {
   try {
+    // Format inventory for the AI
+    const inventoryText = inventory.length > 0
+      ? inventory.map(i => `- ${i.nombre}: $${i.precio} (Stock: ${i.cantidad})`).join('\n')
+      : "No hay información de inventario disponible.";
+
     // Construct the prompt
     const prompt = `
-      Actúa como un experto mecánico automotriz con años de experiencia.
-      Analiza los datos del siguiente vehículo y su historial de mantenimiento para recomendar el próximo servicio necesario.
+      Actúa como un experto mecánico automotriz y cotizador de servicios.
+      Analiza los datos del siguiente vehículo, su historial y EL INVENTARIO DISPONIBLE para recomendar el próximo servicio y ESTIMAR SU COSTO.
       
       Vehículo: ${vehicle.marca} ${vehicle.modelo} (${vehicle.anio})
       Kilometraje actual: ${vehicle.kilometraje || 'No especificado'} km
       
-      Historial de Mantenimiento Reciente:
-      ${maintenanceHistory.map(m => `- ${m.fecha}: ${m.tipo} (${m.descripcion}) a los ${m.kilometraje} km`).join('\n')}
+      Historial Reciente:
+      ${maintenanceHistory.map(m => `- ${m.fecha}: ${m.tipo} (${m.descripcion})`).join('\n')}
       
-      Basado en esto, por favor provee:
-      1. Una recomendación clara de cuál debería ser el próximo mantenimiento.
-      2. Una estimación de cuándo debería realizarse (tiempo o kilometraje).
-      3. Cualquier alerta sobre piezas que podrían estar desgastadas por el modelo/año.
+      INVENTARIO Y PRECIOS (Usa estos precios exactos para tu presupuesto):
+      ${inventoryText}
+      
+      Basado en esto, provee:
+      1. Recomendación del próximo servicio.
+      2. Estimación de cuándo realizarlo.
+      3. PRESUPUESTO ESTIMADO: Suma el precio de los repuestos del inventario necesarios + $30 (mano de obra estimada).
       
       Responde en formato JSON con la siguiente estructura:
       {
-        "recomendacion": "Texto breve del mantenimiento recomendado",
-        "detalle": "Explicación detallada del por qué",
+        "recomendacion": "Título breve del servicio",
+        "detalle": "Explicación técnica",
         "prioridad": "Alta/Media/Baja",
-        "estimado": "Kilometraje o fecha estimada"
+        "estimado": "Kilometraje o texto",
+        "fecha_estimada": "YYYY-MM-DD", // CALCULA UNA FECHA APROXIMADA (Asume 40km/dia si es por kilometraje)
+        "costo_estimado": 100, // Número con el costo total calculado
+        "partes_sugeridas": ["Aceite 10w30", "Filtro de Aceite"] // Lista de partes del inventario usadas
       }
-      SOLO responde con el JSON, sin texto adicional.
+      SOLO responde con el JSON.
     `;
 
     const response = await fetch(GROQ_API_URL, {
@@ -44,10 +55,10 @@ export const generateMaintenanceInsight = async (vehicle, maintenanceHistory) =>
       body: JSON.stringify({
         model: MODEL_NAME,
         messages: [
-          { role: "system", content: "Eres un asistente mecánico experto que responde siempre en formato JSON." },
+          { role: "system", content: "Eres un asistente mecánico y cotizador experto. Respondes siempre en JSON válido." },
           { role: "user", content: prompt }
         ],
-        temperature: 0.5,
+        temperature: 0.4, // Lower temperature to be more precise with math/prices
         response_format: { type: "json_object" }
       }),
     });
@@ -63,12 +74,14 @@ export const generateMaintenanceInsight = async (vehicle, maintenanceHistory) =>
     try {
       return JSON.parse(content);
     } catch (e) {
-      console.warn("Could not parse JSON from AI, returning raw text", content);
+      console.warn("Could not parse JSON from AI", content);
       return {
         recomendacion: "Análisis completado",
         detalle: content,
         prioridad: "Media",
-        estimado: "Revisar manual"
+        estimado: "Revisar manual",
+        costo_estimado: 0,
+        partes_sugeridas: []
       };
     }
 
@@ -140,5 +153,88 @@ export const chatWithAI = async (messages, contextData = {}) => {
   } catch (error) {
     console.error('AI Chat Error:', error);
     throw error;
+  }
+};
+
+export const parseMaintenanceVoice = async (text) => {
+  try {
+    const prompt = `
+      Analiza el siguiente texto dictado por un mecánico y extrae la información para un reporte de mantenimiento.
+      Texto: "${text}"
+      
+      Extrae los siguientes campos en formato JSON:
+      - tipo: "Mantenimiento Preventivo", "Mantenimiento Correctivo", "Reparación", "Revisión General" (Elige el más adecuado)
+      - descripcion: Descripción técnica detallada y formal de lo que se mencionó.
+      - kilometraje: (Número) Si se menciona kilometraje, extráelo. Si no, null.
+      - costo_estimado: (Número) Si se menciona costo o precio, extráelo. Si no, null.
+      
+      Responde SOLO con el JSON.
+    `;
+
+    const response = await fetch(GROQ_API_URL, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        model: MODEL_NAME,
+        messages: [
+          { role: "system", content: "Eres un asistente que estructura datos de voz a JSON." },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.1,
+        response_format: { type: "json_object" }
+      }),
+    });
+
+    if (response.status === 429) {
+      throw new Error('Límite de uso de IA alcanzado. Intenta de nuevo en unos segundos.');
+    }
+
+    if (!response.ok) throw new Error('Error IA');
+    const data = await response.json();
+    return JSON.parse(data.choices[0]?.message?.content);
+
+  } catch (error) {
+    console.error('Error parsing voice:', error);
+    return null;
+  }
+};
+
+export const getVehicleSpecs = async (vehicleText) => {
+  try {
+    const prompt = `
+      Actúa como una base de datos de especificaciones técnicas de autos.
+      Proporciona la capacidad del tanque de combustible (en Litros) para el siguiente vehículo: "${vehicleText}".
+      
+      Si no tienes el dato exacto, da una estimación precisa basada en el segmento y año del vehículo.
+      
+      Responde SOLO con un objeto JSON:
+      {
+        "capacity": 50
+      }
+      (Donde el número es la capacidad en litros).
+    `;
+
+    const response = await fetch(GROQ_API_URL, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        model: MODEL_NAME,
+        messages: [
+          { role: "system", content: "Eres una API de especificaciones de autos. Responde solo JSON." },
+          { role: "user", content: prompt }
+        ],
+        temperature: 0.1,
+        response_format: { type: "json_object" }
+      }),
+    });
+
+    if (!response.ok) throw new Error('Error IA Specs');
+    const data = await response.json();
+    const result = JSON.parse(data.choices[0]?.message?.content);
+    return result?.capacity || 50;
+
+  } catch (error) {
+    console.error('Error getting specs:', error);
+    return null;
   }
 };

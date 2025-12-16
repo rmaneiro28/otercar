@@ -18,7 +18,11 @@ const Profile = React.lazy(() => import('./pages/Profile'));
 const Settings = React.lazy(() => import('./pages/Settings'));
 const Maintenance = React.lazy(() => import('./pages/Maintenance'));
 const AIHistory = React.lazy(() => import('./pages/AIHistory'));
+
 const Owners = React.lazy(() => import('./pages/Owners'));
+const Documents = React.lazy(() => import('./pages/Documents'));
+const Fuel = React.lazy(() => import('./pages/Fuel'));
+const CalendarPage = React.lazy(() => import('./pages/CalendarPage'));
 
 const PrivateRoute = ({ children }) => {
   const { user } = useAuth();
@@ -48,6 +52,9 @@ function App() {
               <Route path="maintenance" element={<Maintenance />} />
               <Route path="ai-history" element={<AIHistory />} />
               <Route path="owners" element={<Owners />} />
+              <Route path="documents" element={<Documents />} />
+              <Route path="fuel" element={<Fuel />} />
+              <Route path="calendar" element={<CalendarPage />} />
               <Route path="profile" element={<Profile />} />
               <Route path="settings" element={<Settings />} />
             </Route>

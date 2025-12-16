@@ -1,42 +1,43 @@
-# 🚗 OterCar - Sistema de Gestión de Mantenimiento Vehicular
+# 🚗 OterCar - Sistema Inteligente de Gestión Vehicular
 
-OterCar es una aplicación web moderna y robusta diseñada para facilitar la gestión integral del mantenimiento de flotas vehiculares. Permite administrar vehículos, inventario de repuestos, mecánicos, tiendas y registros de mantenimiento, todo en una interfaz intuitiva y estéticamente agradable.
+OterCar es una plataforma integral diseñada para modernizar la gestión de flotas y talleres mecánicos. Combina herramientas tradicionales de administración con Inteligencia Artificial para optimizar el mantenimiento, predecir costos y mejorar la comunicación con los clientes.
 
-![Dashboard Preview](https://via.placeholder.com/800x400?text=OterCar+Dashboard+Preview)
+![OterCar Dashboard](https://via.placeholder.com/800x400?text=OterCar+Dashboard+2.0)
 
 ## ✨ Características Principales
 
-*   **📊 Dashboard Interactivo:** Vista general con estadísticas clave, actividad reciente y estado de la flota.
-*   **🚗 Gestión de Vehículos:** Registro completo de vehículos con detalles como marca, modelo, año, VIN y kilometraje.
-*   **🔧 Inventario de Repuestos:** Control de stock, precios y asociación de repuestos con vehículos específicos.
-*   **👨‍🔧 Directorio de Mecánicos:** Gestión de perfiles de mecánicos con especialidades y contacto.
-*   **🏪 Gestión de Tiendas:** Registro de proveedores y tiendas de repuestos.
-*   **📝 Registro de Mantenimientos:** Historial detallado de servicios realizados, costos y notas.
-*   **🔐 Autenticación y Seguridad:** Sistema de login seguro, perfiles de usuario y control de acceso basado en roles (RBAC) mediante Supabase.
-*   **🔔 Notificaciones:** Sistema de alertas en tiempo real para acciones importantes (registro, errores, etc.).
-*   **👤 Perfil de Usuario:** Gestión de información personal y avatar.
-*   **📱 Diseño Responsivo:** Interfaz adaptada para funcionar perfectamente en escritorio y dispositivos móviles.
+### 🧠 Inteligencia Artificial (NUEVO)
+*   **Diagnóstico Predictivo:** Análisis automático del historial de mantenimiento para sugerir próximos servicios.
+*   **Estimación de Costos:** Cálculo de presupuestos basado en precios reales de inventario y mano de obra.
+*   **Alertas Inteligentes:** Notificaciones automáticas sobre anomalías o servicios urgentes.
 
-## 🛠️ Tecnologías Utilizadas
+### 📅 Agenda y Vencimientos (NUEVO)
+*   **Calendario Visual:** Vista mensual con indicadores de colores para vencimientos de documentos (SOAT, Tecno, Pólizas).
+*   **Recordatorios Automáticos:** El sistema escanea diariamente la flota y alerta sobre documentos por vencer (30 días antes).
 
-*   **Frontend:** [React](https://reactjs.org/) (con [Vite](https://vitejs.dev/))
-*   **Estilos:** [Tailwind CSS](https://tailwindcss.com/)
-*   **Base de Datos y Auth:** [Supabase](https://supabase.com/) (PostgreSQL)
-*   **Iconos:** [Lucide React](https://lucide.dev/)
-*   **Enrutamiento:** [React Router](https://reactrouter.com/)
-*   **Notificaciones:** [Sonner](https://sonner.emilkowal.ski/)
+### 📱 Comunicación y Reportes (NUEVO)
+*   **Integración WhatsApp:** Botones "Click-to-Chat" con mensajes contextuales pre-redactados para contactar a propietarios.
+*   **Reportes PDF:** Generación de "Hoja de Vida" del vehículo con un clic, incluyendo historial completo y costos totales.
 
-## 🚀 Comenzando
+### ⛽ Control de Combustible (NUEVO)
+*   **Registro de Cargas:** Monitoreo de litros, costos y kilometraje.
+*   **Calculadora de Tanqueo:** Estimación de costo para llenar el tanque según la capacidad del vehículo (detectada por IA).
 
-Sigue estos pasos para configurar el proyecto localmente.
+### 🛠️ Gestión Operativa
+*   **Flota:** Expediente digital completo por vehículo (VIN, Placa, Color, Dueño).
+*   **Mantenimiento:** Historial detallado de reparaciones con control de repuestos usados.
+*   **Inventario:** Control de stock en tiempo real con descuento automático al registrar servicios.
+*   **Directorio:** Gestión de Mecánicos, Tiendas y Propietarios.
 
-### Prerrequisitos
+## 🚀 Tecnologías
 
-*   Node.js (v16 o superior)
-*   npm o yarn
-*   Una cuenta en Supabase
+*   **Frontend:** React 18 + Vite
+*   **UI/UX:** Tailwind CSS + Lucide Icons + Recharts
+*   **Backend:** Supabase (Auth, Database, Storage, Realtime)
+*   **IA:** Groq API (Llama3)
+*   **Utilidades:** jsPDF (Reportes), date-fns (Fechas), React-Calendar.
 
-### Instalación
+## 📦 Instalación y Configuración
 
 1.  **Clonar el repositorio:**
     ```bash
@@ -49,48 +50,50 @@ Sigue estos pasos para configurar el proyecto localmente.
     npm install
     ```
 
-3.  **Configurar variables de entorno:**
-    Crea un archivo `.env` en la raíz del proyecto y agrega tus credenciales de Supabase:
+3.  **Configurar Variables de Entorno (.env):**
     ```env
-    VITE_SUPABASE_URL=tu_url_de_supabase
-    VITE_SUPABASE_ANON_KEY=tu_anon_key_de_supabase
-    # Opcional: API Key para funciones de IA (Futuro)
-    # VITE_GEMINI_API_KEY=tu_api_key
+    VITE_SUPABASE_URL=tu_url_supa
+    VITE_SUPABASE_ANON_KEY=tu_key_supa
+    VITE_GROQ_API_KEY=tu_api_key_groq
     ```
 
-4.  **Iniciar el servidor de desarrollo:**
+4.  **Iniciar Servidor:**
     ```bash
     npm run dev
     ```
 
-## 🗄️ Configuración de Base de Datos
+## 🗄️ Estructura de Base de Datos (Supabase)
 
-Para que la aplicación funcione correctamente, debes ejecutar los scripts SQL proporcionados en el Editor SQL de Supabase en el siguiente orden:
+El sistema utiliza las siguientes tablas principales:
 
-1.  **Esquema Base:** Crea las tablas principales (`vehiculos`, `inventario`, `mecanicos`, `tiendas`).
-2.  **`supabase_rbac.sql`:** Configura la tabla de perfiles y las políticas de seguridad (RLS).
-3.  **`associate_parts.sql`:** Añade la relación entre inventario y vehículos.
-4.  **`fix_recursion.sql`:** **(IMPORTANTE)** Corrige problemas de recursión infinita en las políticas de seguridad.
+*   `vehiculos`: Datos maestros de la flota.
+*   `propietarios`: Dueños de vehículos (CRM básico).
+*   `mantenimientos`: Bitácora de servicios.
+*   `inventario`: Repuestos y costos.
+*   `recomendaciones_ia`: Historial de análisis generados por la IA.
+*   `documentos_vehiculo`: Archivos y fechas de vencimiento.
+*   `notificaciones`: Sistema de alertas in-app.
 
 ## 📂 Estructura del Proyecto
 
 ```
 src/
 ├── components/
-│   ├── Forms/       # Formularios para crear/editar entidades
-│   ├── Layout/      # Componentes estructurales (Sidebar, Header, Layout)
-│   └── UI/          # Componentes de interfaz reutilizables
-├── context/         # Contextos de React (AuthContext, DataContext)
-├── pages/           # Vistas principales de la aplicación
-├── services/        # Servicios de integración (ej. AI)
-├── App.jsx          # Componente raíz y configuración de rutas
-└── main.jsx         # Punto de entrada
+│   ├── AI/              # Componentes de Inteligencia Artificial
+│   ├── Dashboard/       # Gráficos y widgets
+│   ├── Forms/           # Formularios de captura
+│   ├── Layout/          # Sidebar, Navbar, MobileMenu
+│   └── UI/              # Modales, Botones, Cards
+├── context/
+│   ├── AuthContext.jsx  # Manejo de Sesión
+│   └── DataContext.jsx  # Estado Global (Vehículos, Inventario, IA)
+├── pages/               # Vistas (Calendar, Fuel, Maintenance, etc.)
+├── services/
+│   ├── aiService.js     # Conexión con Groq
+│   └── pdfService.js    # Generador de Reportes
+└── App.jsx              # Router Principal
 ```
 
-## 🤝 Contribución
+## 🤝 Soporte
 
-¡Las contribuciones son bienvenidas! Por favor, abre un issue o envía un pull request para mejoras y correcciones.
-
-## 📄 Licencia
-
-Este proyecto está bajo la Licencia MIT.
+Para dudas técnicas o reportar bugs, contactar al equipo de desarrollo (Rúbel Maneiro).

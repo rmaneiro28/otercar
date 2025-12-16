@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Car, Wrench, Users, Store, Plus, Menu, X, Sparkles, FileText, Settings } from 'lucide-react';
+import { LayoutDashboard, Car, Wrench, Users, Store, Plus, Menu, X, Sparkles, FileText, Settings, Fuel } from 'lucide-react';
 import clsx from 'clsx';
 
 import { useAuth } from '../../context/AuthContext';
@@ -26,8 +26,8 @@ const BottomNav = () => {
         { icon: Store, label: 'Tiendas', path: '/stores' },
         { icon: Users, label: 'Propietarios', path: '/owners' },
         { icon: Sparkles, label: 'Historial IA', path: '/ai-history' },
-        { icon: Settings, label: 'Configuración', path: '/settings' },
-        { icon: Users, label: 'Perfil', path: '/profile' },
+        { icon: FileText, label: 'Documentación', path: '/documents' },
+        { icon: Fuel, label: 'Combustible', path: '/fuel' },
     ];
 
     const handleAddClick = () => {
@@ -40,7 +40,7 @@ const BottomNav = () => {
             {isMoreOpen && (
                 <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden" onClick={() => setIsMoreOpen(false)}>
                     <div
-                        className="absolute bottom-20 right-4 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden animate-in slide-in-from-bottom-10 fade-in duration-200"
+                        className="absolute bottom-20 right-4 w-48 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden animate-in slide-in-from-bottom-10 fade-in duration-200"
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="p-2 space-y-1">
@@ -52,7 +52,7 @@ const BottomNav = () => {
                                     className={({ isActive }) =>
                                         clsx(
                                             'flex items-center gap-3 px-4 py-3 rounded-xl transition-all',
-                                            isActive ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'
+                                            isActive ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
                                         )
                                     }
                                 >
@@ -65,7 +65,7 @@ const BottomNav = () => {
                 </div>
             )}
 
-            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-2 z-50 flex justify-between items-end safe-area-bottom shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+            <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 px-2 py-2 z-50 flex justify-between items-end safe-area-bottom shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
                 {/* Left Items */}
                 {mainNavItems.map((item) => (
                     <NavLink

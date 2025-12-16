@@ -1,22 +1,49 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { LayoutDashboard, Car, Wrench, Users, Store, Settings, LogOut, FileText, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Car, Wrench, Users, Store, Settings, LogOut, FileText, Sparkles, Fuel, Calendar as CalendarIcon } from 'lucide-react';
 import clsx from 'clsx';
 
 const Sidebar = () => {
     const { profile, signOut } = useAuth();
     const isTaller = profile?.rol === 'taller';
 
-    const navItems = [
-        { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
-        { icon: Car, label: 'Vehículos', path: '/vehicles' },
-        { icon: Users, label: 'Clientes', path: '/owners' },
-        { icon: Wrench, label: 'Inventario', path: '/inventory' },
-        { icon: FileText, label: 'Mantenimiento', path: '/maintenance' },
-        { icon: Sparkles, label: 'Historial IA', path: '/ai-history' },
-        { icon: Users, label: 'Mecánicos', path: '/mechanics' },
-        { icon: Store, label: 'Tiendas', path: '/stores' },
+    const navGroups = [
+        {
+            title: 'Principal',
+            items: [
+                { icon: LayoutDashboard, label: 'Dashboard', path: '/' },
+            ]
+        },
+        {
+            title: 'Flota y Clientes',
+            items: [
+                { icon: Car, label: 'Vehículos', path: '/vehicles' },
+                ...(isTaller ? [
+                    { icon: Users, label: 'Clientes', path: '/owners' },
+                    { icon: Users, label: 'Mecánicos', path: '/mechanics' }
+                ] : [])
+            ]
+        },
+        {
+            title: 'Operaciones',
+            items: [
+                { icon: FileText, label: 'Mantenimiento', path: '/maintenance' },
+                ...(isTaller ? [] : [
+                    { icon: FileText, label: 'Documentación', path: '/documents' },
+                    { icon: Fuel, label: 'Combustible', path: '/fuel' }
+                ]),
+                { icon: CalendarIcon, label: 'Agenda', path: '/calendar' },
+            ]
+        },
+        {
+            title: 'Gestión',
+            items: [
+                { icon: Wrench, label: 'Inventario', path: '/inventory' },
+                { icon: Store, label: 'Tiendas', path: '/stores' },
+                { icon: Sparkles, label: 'Historial IA', path: '/ai-history' },
+            ]
+        }
     ];
 
     return (
@@ -33,24 +60,37 @@ const Sidebar = () => {
                 </div>
             </div>
 
-            <nav className="flex-1 px-4 py-6 space-y-2">
-                {navItems.map((item) => (
-                    <NavLink
-                        key={item.path}
-                        to={item.path}
-                        className={({ isActive }) =>
-                            clsx(
-                                'flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group',
-                                isActive
-                                    ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
-                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-white',
-                                item.path === '/settings' && 'settings-link'
-                            )
-                        }
-                    >
-                        <item.icon className="w-5 h-5 transition-transform group-hover:scale-110" />
-                        <span className="font-medium">{item.label}</span>
-                    </NavLink>
+            <nav className="flex-1 px-4 py-6 space-y-6 overflow-y-auto">
+                {navGroups.map((group, groupIndex) => (
+                    group.items.length > 0 && (
+                        <div key={groupIndex}>
+                            <h3 className="px-4 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                                {group.title}
+                            </h3>
+                            <div className="space-y-1">
+                                {group.items.map((item) => (
+                                    <NavLink
+                                        key={item.path}
+                                        to={item.path}
+                                        className={({ isActive }) =>
+                                            clsx(
+                                                'flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-200 group text-sm',
+                                                isActive
+                                                    ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold'
+                                                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-white',
+                                            )
+                                        }
+                                    >
+                                        <item.icon className={clsx(
+                                            "w-4 h-4 transition-transform group-hover:scale-110",
+                                            // Make icons slightly colored when active for nice touch
+                                        )} />
+                                        <span>{item.label}</span>
+                                    </NavLink>
+                                ))}
+                            </div>
+                        </div>
+                    )
                 ))}
             </nav>
 

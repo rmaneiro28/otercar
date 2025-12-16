@@ -1,6 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { X, Calendar, User, FileText, Activity, AlertTriangle, CheckCircle2, Clock, Hash, Gauge } from 'lucide-react';
+import { generateVehicleReport } from '../../services/pdfService';
 import { useData } from '../../context/DataContext';
+import WhatsAppButton from './WhatsAppButton';
+import { useState } from 'react';
+import { Hash, Gauge, User, FileText, Calendar, Clock, Activity, X } from 'lucide-react';
 
 const VehicleDetailModal = ({ isOpen, onClose, vehicle, healthScore }) => {
     const { maintenance, owners } = useData();
@@ -11,8 +13,11 @@ const VehicleDetailModal = ({ isOpen, onClose, vehicle, healthScore }) => {
     const vehicleMaintenance = maintenance.filter(m => m.vehiculo_id === vehicle.id);
     const owner = owners.find(o => o.id === vehicle.propietario_id);
 
+    const handleDownloadPDF = () => {
+        generateVehicleReport(vehicle, vehicleMaintenance);
+    };
+
     // Construct a search query for the car image
-    // Note: Using a public thumbnail service for demo purposes. In production, use a paid API like Imagin.studio or similar.
     const searchQuery = `${vehicle.marca} ${vehicle.modelo} ${vehicle.anio} ${vehicle.color} car`;
     const imageUrl = `https://tse4.mm.bing.net/th?mkt=es-ES&q=${encodeURIComponent(searchQuery)}&w=800&h=600&c=7&rs=1`;
 
@@ -48,12 +53,22 @@ const VehicleDetailModal = ({ isOpen, onClose, vehicle, healthScore }) => {
 
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent"></div>
 
-                    <button
-                        onClick={onClose}
-                        className="absolute top-4 right-4 p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md transition-colors z-20"
-                    >
-                        <X className="w-6 h-6" />
-                    </button>
+                    {/* BUTTONS CONTAINER */}
+                    <div className="absolute top-4 right-4 flex items-center gap-2 z-20">
+                        <button
+                            onClick={handleDownloadPDF}
+                            className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-full backdrop-blur-md transition-all border border-white/10 text-sm font-medium"
+                        >
+                            <FileText className="w-4 h-4" />
+                            <span className="hidden sm:inline">Exportar PDF</span>
+                        </button>
+                        <button
+                            onClick={onClose}
+                            className="p-2 bg-black/20 hover:bg-black/40 text-white rounded-full backdrop-blur-md transition-colors"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
 
                     <div className="absolute bottom-6 left-6 right-6 z-10">
                         <div className="flex items-end justify-between">
@@ -111,10 +126,19 @@ const VehicleDetailModal = ({ isOpen, onClose, vehicle, healthScore }) => {
                                 <span className="text-xs font-bold uppercase">Propietario</span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <p className="text-lg font-bold text-slate-800 dark:text-white truncate">
-                                    {owner?.nombre_completo || 'Sin asignar'}
-                                </p>
-                                {owner?.email && <span className="text-xs text-slate-500 hidden sm:inline">{owner.email}</span>}
+                                <div className="flex flex-col">
+                                    <p className="text-lg font-bold text-slate-800 dark:text-white truncate">
+                                        {owner?.nombre_completo || 'Sin asignar'}
+                                    </p>
+                                    {owner?.email && <span className="text-xs text-slate-500 hidden sm:inline">{owner.email}</span>}
+                                </div>
+                                {owner?.telefono && (
+                                    <WhatsAppButton
+                                        phone={owner.telefono}
+                                        message={`Hola ${owner.nombre_completo}, te escribo desde OterCar sobre tu vehículo ${vehicle.marca} ${vehicle.modelo} (${vehicle.placa}).`}
+                                        compact={true}
+                                    />
+                                )}
                             </div>
                         </div>
                     </div>
@@ -167,8 +191,8 @@ const VehicleDetailModal = ({ isOpen, onClose, vehicle, healthScore }) => {
                             </div>
                         )}
                     </div>
-
                 </div>
+
             </div>
         </div>
     );
