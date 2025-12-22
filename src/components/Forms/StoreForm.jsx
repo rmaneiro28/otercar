@@ -33,63 +33,63 @@ const StoreForm = ({ onSubmit, initialData, onCancel }) => {
     return (
         <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Nombre de la Tienda</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre de la Tienda</label>
                 <input
                     type="text"
                     name="nombre"
                     value={formData.nombre}
                     onChange={handleChange}
                     required
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     placeholder="AutoZone, Repuestos Juan..."
                 />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Teléfono</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Teléfono</label>
                     <input
                         type="tel"
                         name="telefono"
                         value={formData.telefono}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         placeholder="+58-412-123-4567"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Sitio Web</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Sitio Web</label>
                     <input
                         type="url"
                         name="sitio_web"
                         value={formData.sitio_web}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         placeholder="https://..."
                     />
                 </div>
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Dirección</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Dirección</label>
                 <input
                     type="text"
                     name="direccion"
                     value={formData.direccion}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     placeholder="Av. Principal 123"
                 />
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Notas</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Notas</label>
                 <textarea
                     name="notas"
                     value={formData.notas}
                     onChange={handleChange}
                     rows="3"
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none"
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all resize-none text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     placeholder="Horarios, descuentos, etc."
                 ></textarea>
             </div>
@@ -98,7 +98,7 @@ const StoreForm = ({ onSubmit, initialData, onCancel }) => {
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors font-medium"
+                    className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors font-medium"
                 >
                     Cancelar
                 </button>

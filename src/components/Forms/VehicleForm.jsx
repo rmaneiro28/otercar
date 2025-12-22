@@ -34,12 +34,12 @@ const VehicleForm = ({ onSubmit, initialData, onCancel }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
             {/* Owner Selection */}
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Cliente / Propietario</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Cliente / Propietario</label>
                 <select
                     name="propietario_id"
                     value={formData.propietario_id || ''}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                 >
                     <option value="">-- Seleccionar Cliente --</option>
                     {owners.map(owner => (
@@ -48,31 +48,31 @@ const VehicleForm = ({ onSubmit, initialData, onCancel }) => {
                         </option>
                     ))}
                 </select>
-                <p className="text-xs text-slate-500 mt-1">Selecciona el cliente dueño del vehículo.</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Selecciona el cliente dueño del vehículo.</p>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Marca</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Marca</label>
                     <input
                         type="text"
                         name="marca"
                         value={formData.marca}
                         onChange={handleChange}
                         required
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         placeholder="Toyota"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Modelo</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Modelo</label>
                     <input
                         type="text"
                         name="modelo"
                         value={formData.modelo}
                         onChange={handleChange}
                         required
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         placeholder="Corolla"
                     />
                 </div>
@@ -80,7 +80,7 @@ const VehicleForm = ({ onSubmit, initialData, onCancel }) => {
 
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Año</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Año</label>
                     <input
                         type="number"
                         name="anio"
@@ -89,18 +89,18 @@ const VehicleForm = ({ onSubmit, initialData, onCancel }) => {
                         required
                         min="1900"
                         max={new Date().getFullYear() + 1}
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Kilometraje (km)</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Kilometraje (km)</label>
                     <input
                         type="number"
                         name="kilometraje"
                         value={formData.kilometraje}
                         onChange={handleChange}
                         min="0"
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         placeholder="0"
                     />
                 </div>
@@ -108,37 +108,37 @@ const VehicleForm = ({ onSubmit, initialData, onCancel }) => {
 
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Placa</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Placa</label>
                     <input
                         type="text"
                         name="placa"
                         value={formData.placa}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         placeholder="ABC-123"
                     />
                 </div>
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">Color</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Color</label>
                     <input
                         type="text"
                         name="color"
                         value={formData.color}
                         onChange={handleChange}
-                        className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                         placeholder="Blanco"
                     />
                 </div>
             </div>
 
             <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">VIN (Opcional)</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">VIN (Opcional)</label>
                 <input
                     type="text"
                     name="vin"
                     value={formData.vin}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500"
                     placeholder="1HGCM..."
                 />
             </div>
@@ -147,7 +147,7 @@ const VehicleForm = ({ onSubmit, initialData, onCancel }) => {
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors font-medium"
+                    className="px-4 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors font-medium"
                 >
                     Cancelar
                 </button>
