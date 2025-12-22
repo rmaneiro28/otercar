@@ -4,6 +4,14 @@ import { Plus, Trash2, Save, X, Car, Wrench, DollarSign, Calendar, Mic, Loader2 
 import { parseMaintenanceVoice } from '../../services/aiService';
 import { toast } from 'sonner';
 
+// Datepicker imports
+import DatePicker, { registerLocale } from 'react-datepicker';
+import { es } from 'date-fns/locale';
+import 'react-datepicker/dist/react-datepicker.css';
+import '../../styles/datepicker-custom.css';
+
+registerLocale('es', es);
+
 const MaintenanceForm = ({ onSubmit, onCancel }) => {
     const { vehicles, mechanics, inventory } = useData();
     const [isListening, setIsListening] = useState(false);
@@ -205,16 +213,50 @@ const MaintenanceForm = ({ onSubmit, onCancel }) => {
 
                 <div>
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Fecha</label>
-                    <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
-                        <input
-                            type="date"
-                            name="fecha"
-                            value={formData.fecha}
-                            onChange={handleChange}
-                            required
-                            className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-800 dark:text-white"
-                        />
+                    <div className="space-y-2">
+                        <div className="relative group">
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 w-5 h-5 transition-colors z-10" />
+                            <DatePicker
+                                selected={formData.fecha ? new Date(formData.fecha + 'T12:00:00') : null}
+                                onChange={(date) => {
+                                    if (date) {
+                                        setFormData(prev => ({ ...prev, fecha: date.toISOString().split('T')[0] }));
+                                    }
+                                }}
+                                dateFormat="dd/MM/yyyy"
+                                locale="es"
+                                showYearDropdown
+                                showMonthDropdown
+                                dropdownMode="select"
+                                scrollableYearDropdown
+                                yearDropdownItemNumber={15}
+                                minDate={formData.vehiculo_id ? new Date(`${vehicles.find(v => v.id === formData.vehiculo_id)?.anio}-01-01T12:00:00`) : null}
+                                maxDate={new Date()}
+                                className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-800 dark:text-white font-medium"
+                                placeholderText="Seleccionar fecha"
+                                wrapperClassName="w-full"
+                            />
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setFormData(prev => ({ ...prev, fecha: new Date().toISOString().split('T')[0] }))}
+                                className="text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-lg hover:border-blue-500 hover:text-blue-600 transition-all shadow-sm"
+                            >
+                                Hoy
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const yesterday = new Date();
+                                    yesterday.setDate(yesterday.getDate() - 1);
+                                    setFormData(prev => ({ ...prev, fecha: yesterday.toISOString().split('T')[0] }));
+                                }}
+                                className="text-[10px] uppercase tracking-wider font-bold px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 rounded-lg hover:border-blue-500 hover:text-blue-600 transition-all shadow-sm"
+                            >
+                                Ayer
+                            </button>
+                        </div>
                     </div>
                 </div>
 

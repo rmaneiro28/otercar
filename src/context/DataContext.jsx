@@ -27,7 +27,9 @@ export const DataProvider = ({ children }) => {
     const fetchData = async () => {
         setLoading(true);
         const empresaId = profile?.empresa_id;
-        if (!empresaId) return;
+        const userEmail = user?.email;
+        const userId = user?.id;
+        if (!empresaId || !userEmail || !userId) return;
 
         try {
             // Fetch company details first to get the plan
@@ -39,27 +41,83 @@ export const DataProvider = ({ children }) => {
 
             if (companyData) setCompany(companyData);
 
-            const [vehRes, ownerRes, invRes, mechRes, storeRes, maintRes, recRes, notifRes, documentsRes, eventsRes] = await Promise.all([
-                supabase.from('vehiculos').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
+            // --- AUTO-LINKING LOGIC ---
+            // 1. Try to find owner records with my email that DON'T have my userId yet
+            const { data: ownersToLink } = await supabase
+                .from('propietarios')
+                .select('id, empresa_id')
+                .eq('email', userEmail);
+
+            if (ownersToLink && ownersToLink.length > 0) {
+                const ownerIds = ownersToLink.map(o => o.id);
+
+                // 2. Try to update those owner records to point to my userId (to satisfy RLS for next time)
+                // Note: This might fail if RLS is strict, but it's worth trying.
+                await supabase
+                    .from('propietarios')
+                    .update({ usuario_id: userId })
+                    .in('id', ownerIds)
+                    .is('usuario_id', null);
+
+                // 3. Also try to update vehicles linked to these owners to have my userId
+                await supabase
+                    .from('vehiculos')
+                    .update({ usuario_id: userId })
+                    .in('propietario_id', ownerIds)
+                    .is('usuario_id', null);
+            }
+
+            // 1. Get my owner IDs across all workshops (by email) 
+            // We do this AGAIN to get all even if update failed
+            const { data: myOwnerRecords } = await supabase
+                .from('propietarios')
+                .select('id')
+                .eq('email', userEmail);
+
+            // Filter out any potential empty or null IDs to prevent PostgREST errors
+            const myOwnerIds = (myOwnerRecords?.map(o => o.id) || []).filter(id => id && id.length > 0);
+
+            // 2. Fetch Vehicles (mine by company OR mine by ownership OR mine by direct userId)
+            let vehicleQuery = supabase.from('vehiculos').select('*');
+            if (myOwnerIds.length > 0) {
+                vehicleQuery = vehicleQuery.or(`empresa_id.eq.${empresaId},propietario_id.in.(${myOwnerIds.join(',')}),usuario_id.eq.${userId}`);
+            } else {
+                vehicleQuery = vehicleQuery.or(`empresa_id.eq.${empresaId},usuario_id.eq.${userId}`);
+            }
+            const { data: fetchedVehicles, error: vehError } = await vehicleQuery.order('created_at', { ascending: false });
+
+            if (vehError) throw vehError;
+            const myVehicleIds = (fetchedVehicles?.map(v => v.id) || []).filter(id => id && id.length > 0);
+
+            // 3. Fetch related data
+            // Some tables have vehiculo_id (mantenimientos, recomendaciones_ia, documentos_vehiculo)
+            // Others don't or are general (eventos_calendario, notificaciones)
+            const vehicleTablesFilter = (query) => {
+                if (myVehicleIds.length > 0) {
+                    return query.or(`empresa_id.eq.${empresaId},vehiculo_id.in.(${myVehicleIds.join(',')})`);
+                }
+                return query.eq('empresa_id', empresaId);
+            };
+
+            const [ownerRes, invRes, mechRes, storeRes, maintRes, recRes, notifRes, documentsRes, eventsRes] = await Promise.all([
                 supabase.from('propietarios').select('*').eq('empresa_id', empresaId).order('nombre_completo', { ascending: true }),
                 supabase.from('inventario').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
                 supabase.from('mecanicos').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
                 supabase.from('tiendas').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
-                supabase.from('mantenimientos').select('*').eq('empresa_id', empresaId).order('fecha', { ascending: false }),
-                supabase.from('recomendaciones_ia').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
+                vehicleTablesFilter(supabase.from('mantenimientos').select('*')).order('fecha', { ascending: false }),
+                vehicleTablesFilter(supabase.from('recomendaciones_ia').select('*')).order('created_at', { ascending: false }),
                 supabase.from('notificaciones').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
-                supabase.from('documentos_vehiculo').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
+                vehicleTablesFilter(supabase.from('documentos_vehiculo').select('*')).order('created_at', { ascending: false }),
                 supabase.from('eventos_calendario').select('*').eq('empresa_id', empresaId).order('fecha', { ascending: true }),
             ]);
 
-            if (vehRes.error) throw vehRes.error;
             if (ownerRes.error && ownerRes.error.code !== '42P01') console.warn('Error fetching owners:', ownerRes.error);
 
             // Document table might not exist yet, so handle gracefully
             const fetchedDocuments = (documentsRes.status === 404 || documentsRes.error?.code === '42P01') ? [] : documentsRes.data;
             const fetchedEvents = (eventsRes.status === 404 || eventsRes.error?.code === '42P01') ? [] : eventsRes.data;
 
-            setVehicles(vehRes.data || []);
+            setVehicles(fetchedVehicles || []);
             setOwners(ownerRes.data || []);
             setInventory(invRes.data || []);
             setMechanics(mechRes.data || []);
@@ -452,9 +510,18 @@ export const DataProvider = ({ children }) => {
         }
 
         // 1. Insert Maintenance Record
+        const maintenanceToInsert = {
+            ...maint,
+            usuario_id: user.id,
+            empresa_id: profile.empresa_id,
+            // Explicitly sanitize optional UUIDs to null if they are empty strings or falsy
+            mecanico_id: (maint.mecanico_id && maint.mecanico_id.trim() !== '') ? maint.mecanico_id : null,
+            vehiculo_id: (maint.vehiculo_id && maint.vehiculo_id.trim() !== '') ? maint.vehiculo_id : null
+        };
+
         const { data: maintData, error: maintError } = await supabase
             .from('mantenimientos')
-            .insert([{ ...maint, usuario_id: user.id, empresa_id: profile.empresa_id }])
+            .insert([maintenanceToInsert])
             .select();
 
         if (maintError) {

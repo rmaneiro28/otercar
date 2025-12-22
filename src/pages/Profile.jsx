@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
-import { User, Shield, Mail, Calendar, Edit2, Save, X, Camera } from 'lucide-react';
+import { User, Shield, Mail, Calendar, Edit2, Save, X, Camera, Car, ChevronRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../supabaseClient';
 
 const Profile = () => {
     const { user, profile } = useAuth();
-    const { company } = useData();
+    const { company, vehicles } = useData();
     const [isEditing, setIsEditing] = useState(false);
     const [formData, setFormData] = useState({
         nombre_completo: profile?.nombre_completo || '',
@@ -190,6 +191,53 @@ const Profile = () => {
                                         </p>
                                     </div>
                                 </div>
+                            </div>
+
+                            {/* My Vehicles Summary */}
+                            <div className="mt-8 border-t border-slate-100 dark:border-slate-800 pt-8">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                                        <Car className="w-5 h-5 text-blue-600" />
+                                        Mis Vehículos
+                                    </h3>
+                                    <Link to="/vehicles" className="text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center gap-1">
+                                        Ver todos
+                                        <ChevronRight className="w-4 h-4" />
+                                    </Link>
+                                </div>
+
+                                {vehicles.length > 0 ? (
+                                    <div className="grid gap-3">
+                                        {vehicles.slice(0, 3).map(v => (
+                                            <Link
+                                                key={v.id}
+                                                to="/vehicles"
+                                                className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl hover:bg-white dark:hover:bg-slate-800 border border-transparent hover:border-slate-100 dark:hover:border-slate-700 transition-all shadow-sm"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center text-blue-600 font-bold">
+                                                        {v.marca.charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-bold text-slate-800 dark:text-white">{v.marca} {v.modelo}</p>
+                                                        <p className="text-xs text-slate-500">{v.placa}</p>
+                                                    </div>
+                                                </div>
+                                                <ChevronRight className="w-4 h-4 text-slate-300" />
+                                            </Link>
+                                        ))}
+                                        {vehicles.length > 3 && (
+                                            <p className="text-center text-xs text-slate-400 mt-2">
+                                                Y {vehicles.length - 3} vehículos más...
+                                            </p>
+                                        )}
+                                    </div>
+                                ) : (
+                                    <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+                                        <Car className="w-8 h-8 text-slate-400 mx-auto mb-2 opacity-50" />
+                                        <p className="text-sm text-slate-500">No tienes vehículos registrados aún.</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
