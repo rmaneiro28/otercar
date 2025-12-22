@@ -159,8 +159,16 @@ export const AuthProvider = ({ children }) => {
         });
     };
 
-    const signOut = () => {
-        return supabase.auth.signOut();
+    const signOut = async () => {
+        try {
+            await supabase.auth.signOut();
+        } catch (error) {
+            console.error('Error signing out:', error);
+        } finally {
+            setUser(null);
+            setProfile(null);
+            localStorage.clear(); // Clear local storage too just in case
+        }
     };
 
     const value = {
