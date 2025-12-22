@@ -171,14 +171,13 @@ const MaintenanceForm = ({ onSubmit, onCancel }) => {
                 </div>
 
                 <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Mecánico</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Mecánico (Opcional)</label>
                     <div className="relative">
                         <Wrench className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                         <select
                             name="mecanico_id"
                             value={formData.mecanico_id}
                             onChange={handleChange}
-                            required
                             className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-slate-800 dark:text-white"
                         >
                             <option value="">Seleccionar Mecánico</option>
@@ -265,7 +264,7 @@ const MaintenanceForm = ({ onSubmit, onCancel }) => {
             <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-200 dark:border-slate-700">
                 <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase mb-3 flex items-center gap-2">
                     <Wrench className="w-4 h-4" />
-                    Repuestos Utilizados
+                    Repuestos Utilizados (Opcional)
                 </h3>
 
                 <div className="flex gap-2 mb-4">
