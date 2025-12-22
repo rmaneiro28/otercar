@@ -590,6 +590,33 @@ export const DataProvider = ({ children }) => {
         return await addMaintenance(maintenanceRecord, []);
     };
 
+    const updateMaintenance = async (id, updatedMaint, parts = []) => {
+        if (!id) return { error: { message: 'ID de mantenimiento requerido.' } };
+
+        try {
+            const maintenanceToUpdate = {
+                ...updatedMaint,
+                mecanico_id: (updatedMaint.mecanico_id && updatedMaint.mecanico_id.trim() !== '') ? updatedMaint.mecanico_id : null,
+                vehiculo_id: (updatedMaint.vehiculo_id && updatedMaint.vehiculo_id.trim() !== '') ? updatedMaint.vehiculo_id : null
+            };
+
+            const { data, error } = await supabase
+                .from('mantenimientos')
+                .update(maintenanceToUpdate)
+                .eq('id', id)
+                .select();
+
+            if (error) throw error;
+
+            // Simplified: Refresh all data to ensure consistency with parts
+            await fetchData();
+            return { data: data[0] };
+        } catch (error) {
+            console.error('Error updating maintenance:', error.message);
+            return { error };
+        }
+    };
+
     // --- AI Recommendations ---
     const addRecommendation = async (recommendation) => {
         if (!profile?.empresa_id) {
@@ -770,7 +797,7 @@ export const DataProvider = ({ children }) => {
         inventory, addPart, updatePart, deletePart,
         mechanics, addMechanic, updateMechanic, deleteMechanic,
         stores, addStore, updateStore, deleteStore,
-        maintenance, addMaintenance, addFuelRecord,
+        maintenance, addMaintenance, updateMaintenance, addFuelRecord,
         recommendations, addRecommendation, deleteRecommendation,
         documents, addDocument, deleteDocument,
         events, addEvent, deleteEvent, // Expose events

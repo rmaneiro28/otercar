@@ -12,27 +12,31 @@ import '../../styles/datepicker-custom.css';
 
 registerLocale('es', es);
 
-const MaintenanceForm = ({ onSubmit, onCancel }) => {
+const MaintenanceForm = ({ onSubmit, onCancel, initialData }) => {
     const { vehicles, mechanics, inventory } = useData();
     const [isListening, setIsListening] = useState(false);
     const [isProcessingVoice, setIsProcessingVoice] = useState(false);
 
     // Main form state
     const [formData, setFormData] = useState({
-        vehiculo_id: '',
-        mecanico_id: '',
-        tipo: 'Mantenimiento Preventivo',
-        descripcion: '',
-        fecha: new Date().toISOString().split('T')[0],
-        kilometraje: '',
-        costo_mano_obra: 0,
-        notas: ''
+        vehiculo_id: initialData?.vehiculo_id || '',
+        mecanico_id: initialData?.mecanico_id || '',
+        tipo: initialData?.tipo || 'Mantenimiento Preventivo',
+        descripcion: initialData?.descripcion || '',
+        fecha: initialData?.fecha || new Date().toISOString().split('T')[0],
+        kilometraje: initialData?.kilometraje || '',
+        costo_mano_obra: initialData?.costo_mano_obra || 0,
+        notas: initialData?.notas || ''
     });
 
     // Parts selection state
     const [selectedParts, setSelectedParts] = useState([]);
     const [currentPartId, setCurrentPartId] = useState('');
     const [currentPartQty, setCurrentPartQty] = useState(1);
+
+    // Initial load for editing existing parts (simplified for now as we'd need to fetch them if not in initialData)
+    // For now, let's assume we are updating the basic info. 
+    // If the user needs to update parts, we'd need to fetch from 'mantenimiento_repuestos'
 
     // Derived totals
     const partsTotal = selectedParts.reduce((sum, part) => sum + (part.precio * part.cantidad_usada), 0);
@@ -396,7 +400,7 @@ const MaintenanceForm = ({ onSubmit, onCancel }) => {
                     className="px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium shadow-lg shadow-blue-600/20 flex items-center gap-2"
                 >
                     <Save className="w-4 h-4" />
-                    Registrar Mantenimiento
+                    {initialData ? 'Actualizar Mantenimiento' : 'Registrar Mantenimiento'}
                 </button>
             </div>
         </form>

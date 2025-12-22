@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useData } from '../context/DataContext';
-import { Plus, Wrench, Calendar, Car, DollarSign, Search, FileText } from 'lucide-react';
+import { Plus, Wrench, Calendar, Car, DollarSign, Search, FileText, Edit2 } from 'lucide-react';
 import Modal from '../components/UI/Modal';
 import MaintenanceForm from '../components/Forms/MaintenanceForm';
 import AIRecommendations from '../components/AI/AIRecommendations';
 import { toast } from 'sonner';
 
 const Maintenance = () => {
-    const { maintenance, vehicles, mechanics, addMaintenance } = useData();
+    const { maintenance, vehicles, mechanics, addMaintenance, updateMaintenance } = useData();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingMaintenance, setEditingMaintenance] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedVehicleId, setSelectedVehicleId] = useState('');
     const location = useLocation();
@@ -23,16 +24,29 @@ const Maintenance = () => {
     }, [location]);
 
     const handleAdd = () => {
+        setEditingMaintenance(null);
+        setIsModalOpen(true);
+    };
+
+    const handleEdit = (maint) => {
+        setEditingMaintenance(maint);
         setIsModalOpen(true);
     };
 
     const handleSubmit = async (data, parts) => {
-        const result = await addMaintenance(data, parts);
-        if (result && result.error) {
-            toast.error('Error al registrar mantenimiento');
+        let result;
+        if (editingMaintenance) {
+            result = await updateMaintenance(editingMaintenance.id, data, parts);
         } else {
-            toast.success('Mantenimiento registrado exitosamente');
+            result = await addMaintenance(data, parts);
+        }
+
+        if (result && result.error) {
+            toast.error(editingMaintenance ? 'Error al actualizar mantenimiento' : 'Error al registrar mantenimiento');
+        } else {
+            toast.success(editingMaintenance ? 'Mantenimiento actualizado exitosamente' : 'Mantenimiento registrado exitosamente');
             setIsModalOpen(false);
+            setEditingMaintenance(null);
         }
     };
 
@@ -154,11 +168,23 @@ const Maintenance = () => {
                                     </div>
                                 </div>
 
-                                <div className="flex flex-col items-end justify-center min-w-[120px]">
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold mb-1">COSTO TOTAL</p>
-                                    <p className="text-2xl font-bold text-slate-800 dark:text-white">
-                                        ${item.costo_total ? item.costo_total.toFixed(2) : '0.00'}
-                                    </p>
+                                <div className="flex flex-col items-end justify-center min-w-[120px] gap-2">
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => handleEdit(item)}
+                                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-all"
+                                            title="Editar mantenimiento"
+                                        >
+                                            <Edit2 className="w-4 h-4" />
+                                            <span className="sr-only">Editar</span>
+                                        </button>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-xs text-slate-500 dark:text-slate-400 uppercase font-semibold mb-1">COSTO TOTAL</p>
+                                        <p className="text-2xl font-bold text-slate-800 dark:text-white">
+                                            ${item.costo_total ? item.costo_total.toFixed(2) : '0.00'}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -168,12 +194,19 @@ const Maintenance = () => {
 
             <Modal
                 isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                title="Registrar Mantenimiento"
+                onClose={() => {
+                    setIsModalOpen(false);
+                    setEditingMaintenance(null);
+                }}
+                title={editingMaintenance ? "Editar Mantenimiento" : "Registrar Mantenimiento"}
             >
                 <MaintenanceForm
                     onSubmit={handleSubmit}
-                    onCancel={() => setIsModalOpen(false)}
+                    onCancel={() => {
+                        setIsModalOpen(false);
+                        setEditingMaintenance(null);
+                    }}
+                    initialData={editingMaintenance}
                 />
             </Modal>
         </div>
