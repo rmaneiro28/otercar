@@ -27,11 +27,13 @@ const InventoryForm = ({ onSubmit, initialData, onCancel }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Convert empty string to null for optional foreign key
+    // Convert empty string to null for optional foreign key and sanitize numeric values
     const submissionData = {
       ...formData,
       vehiculo_id: formData.vehiculo_id === '' ? null : formData.vehiculo_id,
-      tienda_id: formData.tienda_id === '' ? null : formData.tienda_id
+      tienda_id: formData.tienda_id === '' ? null : formData.tienda_id,
+      cantidad: formData.cantidad === '' ? 0 : Number(formData.cantidad),
+      precio: formData.precio === '' ? 0 : Number(formData.precio)
     };
     onSubmit(submissionData);
   };

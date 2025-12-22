@@ -129,6 +129,8 @@ const MaintenanceForm = ({ onSubmit, onCancel }) => {
 
         const maintenanceData = {
             ...formData,
+            kilometraje: formData.kilometraje === '' ? 0 : Number(formData.kilometraje),
+            costo_mano_obra: formData.costo_mano_obra === '' ? 0 : Number(formData.costo_mano_obra),
             costo_total: grandTotal
         };
 

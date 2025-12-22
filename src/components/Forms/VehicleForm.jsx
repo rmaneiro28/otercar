@@ -27,7 +27,14 @@ const VehicleForm = ({ onSubmit, initialData, onCancel }) => {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onSubmit(formData);
+        // Sanitize numeric values and optional IDs
+        const submissionData = {
+            ...formData,
+            anio: formData.anio === '' ? new Date().getFullYear() : Number(formData.anio),
+            kilometraje: formData.kilometraje === '' ? 0 : Number(formData.kilometraje),
+            propietario_id: formData.propietario_id === '' ? null : formData.propietario_id
+        };
+        onSubmit(submissionData);
     };
 
     return (
