@@ -47,6 +47,12 @@ const Header = () => {
 
     return (
         <header className="h-16 md:h-20 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 px-4 md:px-8 flex items-center justify-between transition-colors duration-300">
+            {/* Mobile Branding */}
+            <div className="flex md:hidden items-center gap-2 mr-4">
+                <img src="/Isotipo.png" alt="Logo" className="w-8 h-8 object-contain" />
+                <span className="font-extrabold text-slate-800 dark:text-white tracking-tight">Oter<span className="text-blue-600">Car</span></span>
+            </div>
+
             <div className="flex items-center gap-4 flex-1 max-w-xl relative">
                 <div className="relative w-full max-w-[200px] md:max-w-full">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 md:w-5 md:h-5" />

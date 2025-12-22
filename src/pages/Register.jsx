@@ -36,15 +36,21 @@ const Register = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4 transition-colors duration-300">
-            <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl w-full max-w-2xl border border-slate-100 dark:border-slate-700">
+        <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center p-4 transition-all duration-500 relative overflow-hidden">
+            {/* Background Decorative Elements */}
+            <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-emerald-600/10 rounded-full blur-[120px] animate-pulse"></div>
+            <div className="absolute bottom-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 rounded-full blur-[120px] animate-pulse"></div>
+
+            <div className="bg-white/70 dark:bg-slate-800/60 backdrop-blur-xl p-8 rounded-3xl shadow-2xl w-full max-w-2xl border border-white/20 dark:border-slate-700/50 relative z-10 transition-all duration-300">
                 <div className="text-center mb-8">
-                    <div className="w-16 h-16 bg-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/20">
-                        <UserPlus className="w-8 h-8 text-white" />
+                    <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-emerald-500/30 group hover:scale-105 transition-transform duration-300">
+                        <img src="/Isotipo Blanco.png" alt="OterCar Logo" className="w-12 h-12 object-contain" />
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-800 dark:text-white">Crear Cuenta</h1>
-                    <p className="text-slate-500 dark:text-slate-400">
-                        {step === 1 ? 'Elige cómo quieres usar OterCar' : 'Completa tus datos'}
+                    <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white tracking-tight">
+                        Oter<span className="text-emerald-500">Car</span>
+                    </h1>
+                    <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium">
+                        {step === 1 ? 'Elige tu plan ideal' : 'Completa tu registro'}
                     </p>
                 </div>
 
@@ -173,9 +179,9 @@ const Register = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-3 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors font-bold shadow-lg shadow-emerald-600/20 disabled:opacity-50"
+                            className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all font-bold shadow-lg shadow-emerald-600/25 disabled:opacity-50 active:scale-[0.98]"
                         >
-                            {loading ? 'Cargando...' : 'Completar Registro'}
+                            {loading ? 'Creando cuenta...' : 'Completar Registro'}
                         </button>
                     </form>
                 )}
