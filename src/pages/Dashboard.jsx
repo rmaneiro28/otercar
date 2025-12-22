@@ -309,7 +309,7 @@ const WorkshopDashboard = ({ vehicles, inventory, mechanics, maintenance, compan
                                 <div key={m.id} className="flex items-center justify-between border-b border-slate-50 dark:border-slate-800 pb-3 last:border-0 last:pb-0">
                                     <div>
                                         <p className="font-medium text-slate-800 dark:text-white text-sm">{m.tipo}</p>
-                                        <p className="text-xs text-slate-500">{new Date(m.fecha).toLocaleDateString()}</p>
+                                        <p className="text-xs text-slate-500">{new Date(m.fecha + 'T12:00:00').toLocaleDateString()}</p>
                                     </div>
                                     <div className="text-right">
                                         <p className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">

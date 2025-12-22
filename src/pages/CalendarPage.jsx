@@ -102,7 +102,9 @@ const CalendarPage = () => {
 
         // 2. Custom Events
         events.forEach(ev => {
-            const evDate = new Date(ev.fecha);
+            // Check if it's an ISO string with time or just a date
+            const evDateStr = ev.fecha.includes('T') ? ev.fecha : `${ev.fecha}T12:00:00`;
+            const evDate = new Date(evDateStr);
             if (isValid(evDate)) {
                 aggregated.push({
                     realId: ev.id,

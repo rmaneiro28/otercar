@@ -43,7 +43,7 @@ export const generateVehicleReport = (vehicle, maintenanceHistory) => {
 
     maintenanceHistory.forEach(record => {
         const rowData = [
-            new Date(record.fecha).toLocaleDateString(),
+            new Date(record.fecha + 'T12:00:00').toLocaleDateString(),
             record.tipo,
             record.descripcion,
             record.kilometraje ? record.kilometraje.toLocaleString() + ' km' : '-',

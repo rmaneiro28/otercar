@@ -145,7 +145,7 @@ const Maintenance = () => {
                                         <div className="flex items-center gap-2 mb-1">
                                             <h3 className="text-lg font-bold text-slate-800 dark:text-white">{item.tipo}</h3>
                                             <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs rounded-lg font-medium">
-                                                {new Date(item.fecha).toLocaleDateString()}
+                                                {new Date(item.fecha + 'T12:00:00').toLocaleDateString()}
                                             </span>
                                         </div>
                                         <p className="text-slate-600 dark:text-slate-300 mb-2">{item.descripcion}</p>
