@@ -54,6 +54,12 @@ const Register = () => {
                     </p>
                 </div>
 
+                {/* Step Indicator */}
+                <div className="flex items-center justify-center gap-2 mb-8">
+                    <div className={`h-1.5 rounded-full transition-all duration-300 ${step === 1 ? 'w-8 bg-emerald-500' : 'w-4 bg-slate-200 dark:bg-slate-700'}`}></div>
+                    <div className={`h-1.5 rounded-full transition-all duration-300 ${step === 2 ? 'w-8 bg-emerald-500' : 'w-4 bg-slate-200 dark:bg-slate-700'}`}></div>
+                </div>
+
                 {error && (
                     <div className="bg-red-50 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-3 rounded-xl mb-4 text-sm text-center">
                         {error}
@@ -136,54 +142,56 @@ const Register = () => {
                         </div>
                     </div>
                 ) : (
-                    <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
-                        <div className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-4 py-2 rounded-lg text-sm mb-4 flex items-center justify-between">
-                            <span>Plan: <strong>{plan === 'taller' ? 'Taller Mecánico' : `Personal ${plan.charAt(0).toUpperCase() + plan.slice(1)}`}</strong></span>
-                            <button type="button" onClick={() => setStep(1)} className="text-blue-800 dark:text-blue-400 hover:underline text-xs">Cambiar</button>
-                        </div>
+                    <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+                        <form onSubmit={handleSubmit} className="space-y-4 max-w-md mx-auto">
+                            <div className="bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-4 py-3 rounded-2xl text-sm mb-6 flex items-center justify-between border border-blue-100 dark:border-blue-800/50">
+                                <span>Plan seleccionado: <strong>{plan === 'taller' ? 'Taller Mecánico' : `Personal ${plan.charAt(0).toUpperCase() + plan.slice(1)}`}</strong></span>
+                                <button type="button" onClick={() => setStep(1)} className="text-blue-800 dark:text-blue-400 font-bold hover:underline text-xs">Cambiar</button>
+                            </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre Completo {role === 'taller' && '(o Nombre del Taller)'}</label>
-                            <input
-                                type="text"
-                                value={fullName}
-                                onChange={(e) => setFullName(e.target.value)}
-                                required
-                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-slate-800 dark:text-white placeholder:text-slate-400"
-                                placeholder={role === 'taller' ? "Taller Mecánico Express" : "Juan Pérez"}
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
-                            <input
-                                type="email"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-slate-800 dark:text-white placeholder:text-slate-400"
-                                placeholder="tu@email.com"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Contraseña</label>
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-slate-800 dark:text-white placeholder:text-slate-400"
-                                placeholder="••••••••"
-                            />
-                        </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nombre Completo {role === 'taller' && '(o Nombre del Taller)'}</label>
+                                <input
+                                    type="text"
+                                    value={fullName}
+                                    onChange={(e) => setFullName(e.target.value)}
+                                    required
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-slate-800 dark:text-white placeholder:text-slate-400"
+                                    placeholder={role === 'taller' ? "Taller Mecánico Express" : "Juan Pérez"}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    required
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-slate-800 dark:text-white placeholder:text-slate-400"
+                                    placeholder="tu@email.com"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Contraseña</label>
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    required
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition-all text-slate-800 dark:text-white placeholder:text-slate-400"
+                                    placeholder="••••••••"
+                                />
+                            </div>
 
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all font-bold shadow-lg shadow-emerald-600/25 disabled:opacity-50 active:scale-[0.98]"
-                        >
-                            {loading ? 'Creando cuenta...' : 'Completar Registro'}
-                        </button>
-                    </form>
+                            <button
+                                type="submit"
+                                disabled={loading}
+                                className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl hover:from-emerald-700 hover:to-teal-700 transition-all font-bold shadow-lg shadow-emerald-600/25 disabled:opacity-50 active:scale-[0.98]"
+                            >
+                                {loading ? 'Creando cuenta...' : 'Completar Registro'}
+                            </button>
+                        </form>
+                    </div>
                 )}
 
                 <div className="mt-6 text-center text-sm text-slate-500 dark:text-slate-400">

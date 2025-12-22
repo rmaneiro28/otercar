@@ -1,0 +1,100 @@
+/* Custom Styles for Intro.js - OterCar Premium Theme */
+
+.introjs-tooltip {
+    background-color: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border-radius: 20px !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
+    font-family: inherit !important;
+    padding: 20px !important;
+    min-width: 300px !important;
+}
+
+.dark .introjs-tooltip {
+    background-color: rgba(15, 23, 42, 0.8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: white !important;
+}
+
+.introjs-tooltiptext {
+    font-size: 15px !important;
+    line-height: 1.6 !important;
+    color: #334155 !important;
+    padding: 10px 0 !important;
+}
+
+.dark .introjs-tooltiptext {
+    color: #cbd5e1 !important;
+}
+
+.introjs-arrow {
+    border-bottom-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.dark .introjs-arrow {
+    border-bottom-color: rgba(15, 23, 42, 0.8) !important;
+}
+
+.introjs-button {
+    background: #2563eb !important;
+    color: white !important;
+    text-shadow: none !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 8px 16px !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    transition: all 0.2s !important;
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2) !important;
+}
+
+.introjs-button:hover {
+    background: #1d4ed8 !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3) !important;
+}
+
+.introjs-disabled,
+.introjs-disabled:hover {
+    background: #e2e8f0 !important;
+    color: #94a3b8 !important;
+    box-shadow: none !important;
+}
+
+.dark .introjs-disabled,
+.dark .introjs-disabled:hover {
+    background: #1e293b !important;
+    color: #475569 !important;
+}
+
+.introjs-bullets ul li a {
+    background: #cbd5e1 !important;
+}
+
+.introjs-bullets ul li a.active {
+    background: #2563eb !important;
+}
+
+.introjs-progress {
+    height: 4px !important;
+    border-radius: 2px !important;
+    background-color: #e2e8f0 !important;
+}
+
+.introjs-progressbar {
+    background-color: #2563eb !important;
+}
+
+.introjs-helperLayer {
+    background: rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: blur(2px) !important;
+}
+
+.introjs-stepnumber {
+    background: #2563eb !important;
+    border: 2px solid white !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+    text-shadow: none !important;
+}
