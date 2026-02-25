@@ -12,7 +12,7 @@ const VehicleDocuments = ({ vehicleId }) => {
     // Form State
     const [formData, setFormData] = useState({
         titulo: '',
-        tipo: 'Seguro',
+        tipo: 'RCV',
         fecha_vencimiento: '',
     });
     const [file, setFile] = useState(null);
@@ -69,7 +69,7 @@ const VehicleDocuments = ({ vehicleId }) => {
             toast.success(editingDoc ? 'Documento actualizado' : 'Documento agregado');
             setIsAdding(false);
             setEditingDoc(null);
-            setFormData({ titulo: '', tipo: 'Seguro', fecha_vencimiento: '' });
+            setFormData({ titulo: '', tipo: 'RCV', fecha_vencimiento: '' });
             setFile(null);
             setPreview(null);
         }
@@ -79,7 +79,7 @@ const VehicleDocuments = ({ vehicleId }) => {
     const handleCancel = () => {
         setIsAdding(false);
         setEditingDoc(null);
-        setFormData({ titulo: '', tipo: 'Seguro', fecha_vencimiento: '' });
+        setFormData({ titulo: '', tipo: 'RCV', fecha_vencimiento: '' });
         setFile(null);
         setPreview(null);
     };
@@ -141,10 +141,10 @@ const VehicleDocuments = ({ vehicleId }) => {
                                 value={formData.tipo}
                                 onChange={e => setFormData({ ...formData, tipo: e.target.value })}
                             >
-                                <option>Seguro</option>
-                                <option>Licencia / Tarjeta Propiedad</option>
-                                <option>Tecnomecanica / Revisión</option>
-                                <option>Impuestos</option>
+                                <option>RCV</option>
+                                <option>Certificado Médico</option>
+                                <option>Licencia</option>
+                                <option>Tarjeta de Propiedad</option>
                                 <option>Otro</option>
                             </select>
                         </div>
@@ -220,7 +220,7 @@ const VehicleDocuments = ({ vehicleId }) => {
                             <div key={doc.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-lg shadow-sm hover:shadow-md transition-all">
                                 <div className="flex items-center gap-3 overflow-hidden">
                                     <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-500">
-                                        {doc.tipo === 'Seguro' ? <AlertTriangle className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
+                                        {doc.tipo === 'RCV' ? <AlertTriangle className="w-4 h-4" /> : <FileText className="w-4 h-4" />}
                                     </div>
                                     <div className="min-w-0">
                                         <p className="font-semibold text-slate-700 dark:text-slate-200 text-sm truncate">{doc.titulo}</p>
