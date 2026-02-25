@@ -53,10 +53,12 @@ const Mechanics = () => {
         }
     };
 
-    const filteredMechanics = mechanics.filter(m =>
-        m.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (m.especialidad && m.especialidad.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const filteredMechanics = mechanics?.filter(m =>
+        m && m.nombre && (
+            m.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (m.especialidad && m.especialidad.toLowerCase().includes(searchTerm.toLowerCase()))
+        )
+    ) || [];
 
     return (
         <div>

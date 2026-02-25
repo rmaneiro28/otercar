@@ -18,10 +18,12 @@ const Owners = () => {
         direccion: ''
     });
 
-    const filteredOwners = owners.filter(owner =>
-        owner.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (owner.email && owner.email.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const filteredOwners = owners?.filter(owner =>
+        owner && owner.nombre_completo && (
+            owner.nombre_completo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (owner.email && owner.email.toLowerCase().includes(searchTerm.toLowerCase()))
+        )
+    ) || [];
 
     const handleAddClient = async (e) => {
         e.preventDefault();

@@ -30,12 +30,14 @@ const Header = () => {
             ).slice(0, 3) || [];
 
             const foundInventory = inventory?.filter(i =>
-                i.nombre.toLowerCase().includes(lowerQ) ||
-                i.codigo?.toLowerCase().includes(lowerQ)
+                i && i.nombre && (
+                    i.nombre.toLowerCase().includes(lowerQ) ||
+                    i.codigo?.toLowerCase().includes(lowerQ)
+                )
             ).slice(0, 3) || [];
 
             const foundMechanics = mechanics?.filter(m =>
-                m.nombre.toLowerCase().includes(lowerQ)
+                m && m.nombre && m.nombre.toLowerCase().includes(lowerQ)
             ).slice(0, 3) || [];
 
             setSearchResults({ vehicles: foundVehicles, inventory: foundInventory, mechanics: foundMechanics });
@@ -190,9 +192,9 @@ const Header = () => {
                     >
                         <div className="text-right hidden md:block">
                             <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                                {profile?.nombre_completo || user?.email}
+                                {profile?.nombre_completo || user?.user_metadata?.full_name || user?.email}
                             </p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">{profile?.rol || 'Usuario'}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">{profile?.rol || user?.user_metadata?.role || 'Usuario'}</p>
                         </div>
                         <div className="w-8 h-8 md:w-10 md:h-10 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center overflow-hidden border-2 border-white dark:border-slate-600 shadow-sm hover:ring-2 hover:ring-blue-500/20 transition-all">
                             <User className="w-5 h-5 md:w-6 md:h-6 text-slate-400 dark:text-slate-300" />
@@ -202,8 +204,8 @@ const Header = () => {
                     {showUserMenu && (
                         <div className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden z-50">
                             <div className="p-4 border-b border-slate-100 dark:border-slate-800 md:hidden">
-                                <p className="text-sm font-semibold text-slate-700 dark:text-white">{profile?.nombre_completo || user?.email}</p>
-                                <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">{profile?.rol || 'Usuario'}</p>
+                                <p className="text-sm font-semibold text-slate-700 dark:text-white">{profile?.nombre_completo || user?.user_metadata?.full_name || user?.email}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">{profile?.rol || user?.user_metadata?.role || 'Usuario'}</p>
                             </div>
                             <div className="p-2">
                                 <Link

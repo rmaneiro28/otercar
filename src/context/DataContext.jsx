@@ -29,106 +29,123 @@ export const DataProvider = ({ children }) => {
         const empresaId = profile?.empresa_id;
         const userEmail = user?.email;
         const userId = user?.id;
-        if (!empresaId || !userEmail || !userId) return;
+
+        if (!userEmail || !userId) return;
 
         try {
-            // Fetch company details first to get the plan
-            const { data: companyData, error: companyError } = await supabase
-                .from('empresas')
-                .select('*')
-                .eq('id', empresaId)
-                .single();
+            // 1. Fetch company details if empresaId exists
+            if (empresaId) {
+                const { data: companyData } = await supabase
+                    .from('empresas')
+                    .select('*')
+                    .eq('id', empresaId)
+                    .single();
 
-            if (companyData) setCompany(companyData);
+                if (companyData) setCompany(companyData);
+            }
 
             // --- AUTO-LINKING LOGIC ---
-            // 1. Try to find owner records with my email that DON'T have my userId yet
-            const { data: ownersToLink } = await supabase
-                .from('propietarios')
-                .select('id, empresa_id')
-                .eq('email', userEmail);
-
-            if (ownersToLink && ownersToLink.length > 0) {
-                const ownerIds = ownersToLink.map(o => o.id);
-
-                // 2. Try to update those owner records to point to my userId (to satisfy RLS for next time)
-                // Note: This might fail if RLS is strict, but it's worth trying.
-                await supabase
-                    .from('propietarios')
-                    .update({ usuario_id: userId })
-                    .in('id', ownerIds)
-                    .is('usuario_id', null);
-
-                // 3. Also try to update vehicles linked to these owners to have my userId
-                await supabase
-                    .from('vehiculos')
-                    .update({ usuario_id: userId })
-                    .in('propietario_id', ownerIds)
-                    .is('usuario_id', null);
-            }
-
-            // 1. Get my owner IDs across all workshops (by email) 
-            // We do this AGAIN to get all even if update failed
+            // 1. Get all IDs in 'propietarios' that belong to me (by ID or Email)
             const { data: myOwnerRecords } = await supabase
                 .from('propietarios')
-                .select('id')
-                .eq('email', userEmail);
+                .select('id, usuario_id')
+                .or(`usuario_id.eq.${userId},email.eq.${userEmail}`);
 
-            // Filter out any potential empty or null IDs to prevent PostgREST errors
-            const myOwnerIds = (myOwnerRecords?.map(o => o.id) || []).filter(id => id && id.length > 0);
+            const allMyOwnerIds = (myOwnerRecords?.map(o => o.id) || []);
 
-            // 2. Fetch Vehicles (mine by company OR mine by ownership OR mine by direct userId)
-            let vehicleQuery = supabase.from('vehiculos').select('*');
-            if (myOwnerIds.length > 0) {
-                vehicleQuery = vehicleQuery.or(`empresa_id.eq.${empresaId},propietario_id.in.(${myOwnerIds.join(',')}),usuario_id.eq.${userId}`);
-            } else {
-                vehicleQuery = vehicleQuery.or(`empresa_id.eq.${empresaId},usuario_id.eq.${userId}`);
+            // 2. Link them to my account if they aren't already
+            const unlinkedOwners = myOwnerRecords?.filter(o => !o.usuario_id) || [];
+            if (unlinkedOwners.length > 0) {
+                await supabase.from('propietarios').update({ usuario_id: userId }).in('id', unlinkedOwners.map(o => o.id));
             }
-            const { data: fetchedVehicles, error: vehError } = await vehicleQuery.order('created_at', { ascending: false });
+
+            // 3. Fetch Vehicles
+            let vehicleQuery = supabase.from('vehiculos').select('*');
+
+            let queryParts = [`usuario_id.eq.${userId}`];
+            if (allMyOwnerIds.length > 0) {
+                queryParts.push(`propietario_id.in.(${allMyOwnerIds.join(',')})`);
+            }
+            if (empresaId) {
+                queryParts.push(`empresa_id.eq.${empresaId}`);
+            }
+
+            const { data: fetchedVehicles, error: vehError } = await vehicleQuery
+                .or(queryParts.join(','))
+                .order('created_at', { ascending: false });
 
             if (vehError) throw vehError;
-            const myVehicleIds = (fetchedVehicles?.map(v => v.id) || []).filter(id => id && id.length > 0);
+            setVehicles(fetchedVehicles || []);
 
-            // 3. Fetch related data
-            // Some tables have vehiculo_id (mantenimientos, recomendaciones_ia, documentos_vehiculo)
-            // Others don't or are general (eventos_calendario, notificaciones)
-            const vehicleTablesFilter = (query) => {
+            const myVehicleIds = (fetchedVehicles?.map(v => v.id) || []);
+
+            // 4. Fetch dependent data
+            const vehicleFilter = (query) => {
                 if (myVehicleIds.length > 0) {
-                    return query.or(`empresa_id.eq.${empresaId},vehiculo_id.in.(${myVehicleIds.join(',')})`);
+                    let filter = `vehiculo_id.in.(${myVehicleIds.join(',')})`;
+                    if (empresaId) filter += `,empresa_id.eq.${empresaId}`;
+                    return query.or(filter);
                 }
-                return query.eq('empresa_id', empresaId);
+                return empresaId ? query.eq('empresa_id', empresaId) : query.eq('id', '00000000-0000-0000-0000-000000000000');
             };
 
-            const [ownerRes, invRes, mechRes, storeRes, maintRes, recRes, notifRes, documentsRes, eventsRes] = await Promise.all([
-                supabase.from('propietarios').select('*').eq('empresa_id', empresaId).order('nombre_completo', { ascending: true }),
-                supabase.from('inventario').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
-                supabase.from('mecanicos').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
-                supabase.from('tiendas').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
-                vehicleTablesFilter(supabase.from('mantenimientos').select('*')).order('fecha', { ascending: false }),
-                vehicleTablesFilter(supabase.from('recomendaciones_ia').select('*')).order('created_at', { ascending: false }),
-                supabase.from('notificaciones').select('*').eq('empresa_id', empresaId).order('created_at', { ascending: false }),
-                vehicleTablesFilter(supabase.from('documentos_vehiculo').select('*')).order('created_at', { ascending: false }),
-                supabase.from('eventos_calendario').select('*').eq('empresa_id', empresaId).order('fecha', { ascending: true }),
+            const companyFilter = (query) => {
+                // If I'm a workshop, I filter by my company.
+                // If I'm a personal user, I filter by my userId to see my private records (mechanics, inventory, etc.)
+                if (empresaId) {
+                    return query.eq('empresa_id', empresaId);
+                }
+                return query.eq('usuario_id', userId);
+            };
+            // Perform all fetches independently. If one fails, it shouldn't stop others.
+            const safeFetch = async (name, query) => {
+                try {
+                    const { data, error } = await query;
+                    if (error) {
+                        console.warn(`[DataContext] Error loading ${name}:`, error.message);
+                        return [];
+                    }
+                    return data || [];
+                } catch (e) {
+                    console.error(`[DataContext] Critical Fetch Error for ${name}:`, e);
+                    return [];
+                }
+            };
+
+            const [
+                fetchedOwners,
+                fetchedInventory,
+                fetchedMechanics,
+                fetchedStores,
+                fetchedMaintenance,
+                fetchedRecommendations,
+                fetchedNotifications,
+                fetchedDocuments,
+                fetchedEvents
+            ] = await Promise.all([
+                safeFetch('owners', companyFilter(supabase.from('propietarios').select('*').order('nombre_completo', { ascending: true }))),
+                safeFetch('inventory', companyFilter(supabase.from('inventario').select('*').order('created_at', { ascending: false }))),
+                safeFetch('mechanics', companyFilter(supabase.from('mecanicos').select('*').order('created_at', { ascending: false }))),
+                safeFetch('stores', companyFilter(supabase.from('tiendas').select('*').order('created_at', { ascending: false }))),
+                safeFetch('maintenance', vehicleFilter(supabase.from('mantenimientos').select('*, mantenimiento_repuestos(*, inventario(nombre))')).order('fecha', { ascending: false })),
+                safeFetch('recommendations', vehicleFilter(supabase.from('recomendaciones_ia').select('*')).order('created_at', { ascending: false })),
+                safeFetch('notifications', companyFilter(supabase.from('notificaciones').select('*').order('created_at', { ascending: false }))),
+                safeFetch('documents', vehicleFilter(supabase.from('documentos_vehiculo').select('*')).order('created_at', { ascending: false })),
+                safeFetch('events', companyFilter(supabase.from('eventos_calendario').select('*').order('fecha', { ascending: true })))
             ]);
 
-            if (ownerRes.error && ownerRes.error.code !== '42P01') console.warn('Error fetching owners:', ownerRes.error);
+            setOwners(fetchedOwners);
+            setInventory(fetchedInventory);
+            setMechanics(fetchedMechanics);
+            setStores(fetchedStores);
+            setMaintenance(fetchedMaintenance);
+            setRecommendations(fetchedRecommendations);
+            setNotifications(fetchedNotifications);
+            setDocuments(fetchedDocuments);
+            setEvents(fetchedEvents);
 
-            // Document table might not exist yet, so handle gracefully
-            const fetchedDocuments = (documentsRes.status === 404 || documentsRes.error?.code === '42P01') ? [] : documentsRes.data;
-            const fetchedEvents = (eventsRes.status === 404 || eventsRes.error?.code === '42P01') ? [] : eventsRes.data;
-
-            setVehicles(fetchedVehicles || []);
-            setOwners(ownerRes.data || []);
-            setInventory(invRes.data || []);
-            setMechanics(mechRes.data || []);
-            setStores(storeRes.data || []);
-            setMaintenance(maintRes.data || []);
-            setRecommendations(recRes.data || []);
-            setNotifications(notifRes.data || []);
-            setDocuments(fetchedDocuments || []);
-            setEvents(fetchedEvents || []);
         } catch (error) {
-            console.error('Error fetching data:', error.message);
+            console.error('DataContext: Global Fetch Failure', error);
         } finally {
             setLoading(false);
         }
@@ -136,10 +153,9 @@ export const DataProvider = ({ children }) => {
 
     // --- AUTOMATED SCAN LOGIC ---
     useEffect(() => {
-        if (user && profile?.empresa_id) {
+        // CORRECCIÓN: Llamar a fetchData si hay un usuario logueado, sin importar si tiene empresa_id
+        if (user) {
             fetchData();
-        } else {
-            // Reset state logic could go here if needed
         }
     }, [user, profile]);
 
@@ -290,9 +306,11 @@ export const DataProvider = ({ children }) => {
 
     // --- Vehicles (Vehiculos) ---
     const addVehicle = async (vehicle) => {
-        if (!profile?.empresa_id) {
-            return { error: { message: 'Error de sesión: No se encontró la empresa asociada.' } };
+        if (!user) {
+            return { error: { message: 'Error de sesión: Usuario no autenticado.' } };
         }
+
+        const empresaId = profile?.empresa_id;
 
         // Check Plan Limits
         const plan = company?.plan || 'free';
@@ -307,10 +325,9 @@ export const DataProvider = ({ children }) => {
 
         const vehicleData = {
             ...vehicle,
-            empresa_id: profile.empresa_id,
-            // If usuario_id was used before, now we map it to propietario_id if it exists in the form
+            empresa_id: empresaId || null,
             propietario_id: vehicle.propietario_id || null,
-            usuario_id: user.id // Add usuario_id to allow RLS visibility
+            usuario_id: user.id
         };
 
         const { data, error } = await supabase.from('vehiculos').insert([vehicleData]).select();
@@ -345,9 +362,10 @@ export const DataProvider = ({ children }) => {
     // --- Clients (Propietarios) ---
     // --- Clients (Propietarios) ---
     const addClient = async (client) => {
-        if (!profile?.empresa_id) {
-            return { error: { message: 'Error de sesión: No se encontró la empresa asociada.' } };
+        if (!user) {
+            return { error: { message: 'Error de sesión: Usuario no autenticado.' } };
         }
+        const empresaId = profile?.empresa_id;
 
         // --- CHECK LIMITS ---
         const plan = company?.plan || 'free';
@@ -369,7 +387,7 @@ export const DataProvider = ({ children }) => {
         }
         // ---------------------
 
-        const { data, error } = await supabase.from('propietarios').insert([{ ...client, usuario_id: user.id, empresa_id: profile.empresa_id }]).select();
+        const { data, error } = await supabase.from('propietarios').insert([{ ...client, usuario_id: user.id, empresa_id: empresaId || null }]).select();
         if (error) {
             console.error('Error adding client:', error.message);
             return { error };
@@ -380,10 +398,11 @@ export const DataProvider = ({ children }) => {
 
     // --- Inventory (Inventario) ---
     const addPart = async (part) => {
-        if (!profile?.empresa_id) {
-            return { error: { message: 'Error de sesión: No se encontró la empresa asociada.' } };
+        if (!user) {
+            return { error: { message: 'Error de sesión: Usuario no autenticado.' } };
         }
-        const { data, error } = await supabase.from('inventario').insert([{ ...part, usuario_id: user.id, empresa_id: profile.empresa_id }]).select();
+        const empresaId = profile?.empresa_id;
+        const { data, error } = await supabase.from('inventario').insert([{ ...part, usuario_id: user.id, empresa_id: empresaId || null }]).select();
         if (error) {
             console.error('Error adding part:', error.message);
             return { error };
@@ -414,10 +433,11 @@ export const DataProvider = ({ children }) => {
 
     // --- Mechanics (Mecanicos) ---
     const addMechanic = async (mechanic) => {
-        if (!profile?.empresa_id) {
-            return { error: { message: 'Error de sesión: No se encontró la empresa asociada.' } };
+        if (!user) {
+            return { error: { message: 'Error de sesión: Usuario no autenticado.' } };
         }
-        const { data, error } = await supabase.from('mecanicos').insert([{ ...mechanic, usuario_id: user.id, empresa_id: profile.empresa_id }]).select();
+        const empresaId = profile?.empresa_id;
+        const { data, error } = await supabase.from('mecanicos').insert([{ ...mechanic, usuario_id: user.id, empresa_id: empresaId || null }]).select();
         if (error) {
             console.error('Error adding mechanic:', error.message);
             return { error };
@@ -448,10 +468,11 @@ export const DataProvider = ({ children }) => {
 
     // --- Stores (Tiendas) ---
     const addStore = async (store) => {
-        if (!profile?.empresa_id) {
-            return { error: { message: 'Error de sesión: No se encontró la empresa asociada.' } };
+        if (!user) {
+            return { error: { message: 'Error de sesión: Usuario no autenticado.' } };
         }
-        const { data, error } = await supabase.from('tiendas').insert([{ ...store, usuario_id: user.id, empresa_id: profile.empresa_id }]).select();
+        const empresaId = profile?.empresa_id;
+        const { data, error } = await supabase.from('tiendas').insert([{ ...store, usuario_id: user.id, empresa_id: empresaId || null }]).select();
         if (error) {
             console.error('Error adding store:', error.message);
             return { error };
@@ -482,95 +503,99 @@ export const DataProvider = ({ children }) => {
 
     // --- Maintenance (Mantenimientos) ---
     const addMaintenance = async (maint, parts = []) => {
-        if (!profile?.empresa_id) {
-            return { error: { message: 'Error de sesión: No se encontró la empresa asociada.' } };
-        }
-        // 0. Validate Stock (Server-side check)
-        if (parts.length > 0) {
-            for (const p of parts) {
-                const { data: currentPart, error: fetchError } = await supabase
-                    .from('inventario')
-                    .select('cantidad, nombre')
-                    .eq('id', p.id)
-                    .single();
-
-                if (fetchError) {
-                    console.error('Error checking stock:', fetchError.message);
-                    return { error: fetchError };
-                }
-
-                if (currentPart.cantidad < p.cantidad_usada) {
-                    return {
-                        error: {
-                            message: `Stock insuficiente para ${currentPart.nombre}. Disponible: ${currentPart.cantidad}, Requerido: ${p.cantidad_usada}`
-                        }
-                    };
-                }
-            }
+        if (!user) {
+            return { error: { message: 'Error de sesión: Usuario no autenticado.' } };
         }
 
-        // 1. Insert Maintenance Record
-        const maintenanceToInsert = {
-            ...maint,
-            usuario_id: user.id,
-            empresa_id: profile.empresa_id,
-            // Explicitly sanitize optional UUIDs to null if they are empty strings or falsy
-            mecanico_id: (maint.mecanico_id && maint.mecanico_id.trim() !== '') ? maint.mecanico_id : null,
-            vehiculo_id: (maint.vehiculo_id && maint.vehiculo_id.trim() !== '') ? maint.vehiculo_id : null
-        };
-
-        const { data: maintData, error: maintError } = await supabase
-            .from('mantenimientos')
-            .insert([maintenanceToInsert])
-            .select();
-
-        if (maintError) {
-            console.error('Error adding maintenance:', maintError.message);
-            return { error: maintError };
-        }
-
-        const newMaint = maintData[0];
-
-        // 2. Insert Maintenance Parts (if any)
-        if (parts.length > 0) {
-            const partsToInsert = parts.map(p => ({
-                mantenimiento_id: newMaint.id,
-                repuesto_id: p.id,
-                cantidad: p.cantidad_usada,
-                precio_unitario: p.precio
-            }));
-
-            const { error: partsError } = await supabase
-                .from('mantenimiento_repuestos')
-                .insert(partsToInsert);
-
-            if (partsError) {
-                console.error('Error adding maintenance parts:', partsError.message);
-                // Note: We might want to rollback maintenance here, but Supabase JS doesn't support transactions easily without RPC.
-            }
-
-            // 3. Update Inventory Quantities
-            for (const p of parts) {
-                // Fetch fresh quantity again to be safe (though we just checked)
-                const { data: currentPart } = await supabase
-                    .from('inventario')
-                    .select('cantidad')
-                    .eq('id', p.id)
-                    .single();
-
-                if (currentPart) {
-                    const newQuantity = currentPart.cantidad - p.cantidad_usada;
-                    await supabase
+        try {
+            // 0. Validate Stock (Server-side check)
+            if (parts.length > 0) {
+                for (const p of parts) {
+                    const { data: currentPart, error: fetchError } = await supabase
                         .from('inventario')
-                        .update({ cantidad: newQuantity })
-                        .eq('id', p.id);
+                        .select('cantidad, nombre')
+                        .eq('id', p.id)
+                        .single();
+
+                    if (fetchError) {
+                        console.error('Error al verificar stock:', fetchError);
+                        throw new Error(`No se pudo verificar el stock de ${p.nombre}`);
+                    }
+
+                    if (!currentPart || currentPart.cantidad < p.cantidad_usada) {
+                        throw new Error(`Stock insuficiente para ${currentPart?.nombre || 'el repuesto'}. Disponible: ${currentPart?.cantidad || 0}, Requerido: ${p.cantidad_usada}`);
+                    }
                 }
             }
-        }
 
-        // Refresh data to get updates
-        await fetchData();
-        return { data: newMaint };
+            // 1. Insert Maintenance Record
+            const maintenanceToInsert = {
+                ...maint,
+                usuario_id: user.id,
+                empresa_id: profile?.empresa_id || null,
+                mecanico_id: (maint.mecanico_id && maint.mecanico_id.trim() !== '') ? maint.mecanico_id : null,
+                vehiculo_id: (maint.vehiculo_id && maint.vehiculo_id.trim() !== '') ? maint.vehiculo_id : null
+            };
+
+            const { data: maintData, error: maintError } = await supabase
+                .from('mantenimientos')
+                .insert([maintenanceToInsert])
+                .select();
+
+            if (maintError) {
+                console.error('Error al insertar mantenimiento:', maintError.message);
+                throw maintError;
+            }
+
+            if (!maintData || maintData.length === 0) {
+                throw new Error('No se pudo crear el registro de mantenimiento.');
+            }
+
+            const newMaint = maintData[0];
+
+            // 2. Insert Maintenance Parts (if any)
+            if (parts.length > 0 && newMaint) {
+                const partsToInsert = parts.map(p => ({
+                    mantenimiento_id: newMaint.id,
+                    repuesto_id: p.id,
+                    cantidad: p.cantidad_usada,
+                    precio_unitario: p.precio
+                }));
+
+                const { error: partsError } = await supabase
+                    .from('mantenimiento_repuestos')
+                    .insert(partsToInsert);
+
+                if (partsError) {
+                    console.warn('Error al guardar repuestos (el mantenimiento se guardó):', partsError);
+                }
+
+                // 3. Update Inventory Quantities
+                for (const p of parts) {
+                    const { data: cp } = await supabase
+                        .from('inventario')
+                        .select('cantidad')
+                        .eq('id', p.id)
+                        .single();
+
+                    if (cp) {
+                        const newQuantity = cp.cantidad - p.cantidad_usada;
+                        await supabase
+                            .from('inventario')
+                            .update({ cantidad: newQuantity })
+                            .eq('id', p.id);
+                    }
+                }
+            }
+
+            // Refresh local state
+            await fetchData();
+            return { data: newMaint };
+
+        } catch (error) {
+            console.error('Error crítico en addMaintenance:', error);
+            return { error: { message: error.message || 'Error desconocido al registrar mantenimiento' } };
+        }
     };
 
     const addFuelRecord = async (data) => {
@@ -591,43 +616,149 @@ export const DataProvider = ({ children }) => {
     };
 
     const updateMaintenance = async (id, updatedMaint, parts = []) => {
-        if (!id) return { error: { message: 'ID de mantenimiento requerido.' } };
+        if (!id) return { error: { message: 'ID de mantenimiento requerido para actualizar.' } };
+
+        console.log(`[DataContext] Iniciando actualización de mantenimiento ID: ${id}`, { updatedMaint, partsCount: parts.length });
 
         try {
+            // 0. DIAGNOSTIC: Check if the record even exists and who owns it
+            const { data: existing, error: checkError } = await supabase
+                .from('mantenimientos')
+                .select('id, usuario_id, empresa_id, vehiculo_id')
+                .eq('id', id)
+                .single();
+
+            if (checkError || !existing) {
+                console.error('[DataContext] DIAGNÓSTICO: Registro no encontrado o invisible.', checkError);
+                throw new Error('No se puede encontrar el registro a editar. Es posible que no tengas permisos de acceso.');
+            }
+
+            console.log('[DataContext] DIAGNÓSTICO: Registro encontrado.', {
+                auth_user: user?.id,
+                auth_empresa: profile?.empresa_id,
+                record_user: existing.usuario_id,
+                record_empresa: existing.empresa_id,
+                record_vehiculo: existing.vehiculo_id
+            });
+
+            // 1. Rollback stock of old parts
+            const { data: oldParts, error: fetchOldPartsError } = await supabase
+                .from('mantenimiento_repuestos')
+                .select('*')
+                .eq('mantenimiento_id', id);
+
+            if (fetchOldPartsError) throw fetchOldPartsError;
+
+            if (oldParts && oldParts.length > 0) {
+                console.log(`[DataContext] Reversando stock de ${oldParts.length} repuestos antiguos...`);
+                for (const op of oldParts) {
+                    const { data: cp } = await supabase
+                        .from('inventario')
+                        .select('cantidad')
+                        .eq('id', op.repuesto_id)
+                        .single();
+                    if (cp) {
+                        await supabase
+                            .from('inventario')
+                            .update({ cantidad: cp.cantidad + op.cantidad })
+                            .eq('id', op.repuesto_id);
+                    }
+                }
+            }
+
+            // 2. Delete old part links
+            const { error: deletePartsError } = await supabase
+                .from('mantenimiento_repuestos')
+                .delete()
+                .eq('mantenimiento_id', id);
+
+            if (deletePartsError) throw deletePartsError;
+
+            // 3. Update main record (UPSERT for better RLS handling)
             const maintenanceToUpdate = {
-                ...updatedMaint,
-                mecanico_id: (updatedMaint.mecanico_id && updatedMaint.mecanico_id.trim() !== '') ? updatedMaint.mecanico_id : null,
-                vehiculo_id: (updatedMaint.vehiculo_id && updatedMaint.vehiculo_id.trim() !== '') ? updatedMaint.vehiculo_id : null
+                id: id,
+                usuario_id: user.id,
+                empresa_id: profile?.empresa_id || null,
+                vehiculo_id: updatedMaint.vehiculo_id || null,
+                mecanico_id: updatedMaint.mecanico_id || null,
+                tipo: updatedMaint.tipo,
+                descripcion: updatedMaint.descripcion,
+                fecha: updatedMaint.fecha,
+                kilometraje: updatedMaint.kilometraje === '' ? 0 : Number(updatedMaint.kilometraje),
+                costo_mano_obra: updatedMaint.costo_mano_obra === '' ? 0 : Number(updatedMaint.costo_mano_obra),
+                costo_total: updatedMaint.costo_total || 0,
+                notas: updatedMaint.notas || ''
             };
 
-            const { data, error } = await supabase
+            const { data: updatedData, error: updateError } = await supabase
                 .from('mantenimientos')
-                .update(maintenanceToUpdate)
-                .eq('id', id)
+                .upsert(maintenanceToUpdate)
                 .select();
 
-            if (error) throw error;
+            if (updateError) throw updateError;
 
-            // Simplified: Refresh all data to ensure consistency with parts
+            if (!updatedData || updatedData.length === 0) {
+                // Si llegamos aquí, es que el UPDATE/UPSERT fue bloqueado por RLS.
+                throw new Error('Supabase denegó el guardado. Falta la política RLS de UPDATE para cuentas personales.');
+            }
+
+            console.log('[DataContext] Registro principal actualizado exitosamente.');
+
+            // 4. Insert new part links
+            if (parts.length > 0) {
+                console.log(`[DataContext] Registrando ${parts.length} nuevos repuestos...`);
+                const partsToInsert = parts.map(p => ({
+                    mantenimiento_id: id,
+                    repuesto_id: p.id,
+                    cantidad: p.cantidad_usada,
+                    precio_unitario: p.precio
+                }));
+
+                const { error: insertPartsError } = await supabase
+                    .from('mantenimiento_repuestos')
+                    .insert(partsToInsert);
+
+                if (insertPartsError) throw insertPartsError;
+
+                // 5. Deduct stock for new parts
+                for (const p of parts) {
+                    const { data: cp } = await supabase
+                        .from('inventario')
+                        .select('cantidad')
+                        .eq('id', p.id)
+                        .single();
+                    if (cp) {
+                        const newQty = cp.cantidad - p.cantidad_usada;
+                        if (newQty < 0) console.warn(`[DataContext] Advertencia: Stock negativo para repuesto ${p.id}`);
+                        await supabase
+                            .from('inventario')
+                            .update({ cantidad: newQty })
+                            .eq('id', p.id);
+                    }
+                }
+            }
+
+            console.log('[DataContext] Actualización completa. Refrescando datos...');
+            // Refresh local state
             await fetchData();
-            return { data: data[0] };
+            return { data: updatedData[0] };
         } catch (error) {
-            console.error('Error updating maintenance:', error.message);
-            return { error };
+            console.error('[DataContext] Error crítico actualizando mantenimiento:', error);
+            return { error: { message: error.message || 'Error desconocido al actualizar' } };
         }
     };
 
     // --- AI Recommendations ---
     const addRecommendation = async (recommendation) => {
-        if (!profile?.empresa_id) {
-            return { error: { message: 'Error de sesión: No se encontró la empresa asociada.' } };
+        if (!user) {
+            return { error: { message: 'Error de sesión: Usuario no autenticado.' } };
         }
         const plan = company?.plan || 'free';
         if (plan === 'free') {
             return { error: { message: 'Tu plan actual no incluye IA. Actualiza a Estándar o Premium.' } };
         }
 
-        const { data, error } = await supabase.from('recomendaciones_ia').insert([{ ...recommendation, empresa_id: profile.empresa_id }]).select();
+        const { data, error } = await supabase.from('recomendaciones_ia').insert([{ ...recommendation, empresa_id: profile?.empresa_id || null, usuario_id: user.id }]).select();
         if (error) {
             console.error('Error adding recommendation:', error.message);
             return { error };
@@ -684,7 +815,8 @@ export const DataProvider = ({ children }) => {
             .insert([{
                 ...docData,
                 url_archivo: fileUrl,
-                empresa_id: profile.empresa_id
+                empresa_id: profile?.empresa_id || null,
+                usuario_id: user.id
             }])
             .select();
 
@@ -745,10 +877,10 @@ export const DataProvider = ({ children }) => {
     };
 
     const addNotification = async (notification) => {
-        if (!profile?.empresa_id) {
-            return { error: { message: 'Error de sesión: No se encontró la empresa asociada.' } };
+        if (!user) {
+            return { error: { message: 'Error de sesión: Usuario no autenticado.' } };
         }
-        const { data, error } = await supabase.from('notificaciones').insert([{ ...notification, usuario_id: user.id, empresa_id: profile.empresa_id }]).select();
+        const { data, error } = await supabase.from('notificaciones').insert([{ ...notification, usuario_id: user.id, empresa_id: profile?.empresa_id || null }]).select();
         if (error) {
             console.error('Error adding notification:', error.message);
             return { error };
@@ -767,7 +899,8 @@ export const DataProvider = ({ children }) => {
             .from('eventos_calendario')
             .insert([{
                 ...eventData,
-                empresa_id: profile.empresa_id
+                empresa_id: profile?.empresa_id || null,
+                usuario_id: user.id
             }])
             .select();
 

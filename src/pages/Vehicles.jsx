@@ -132,11 +132,13 @@ const Vehicles = () => {
     }
   };
 
-  const filteredVehicles = vehicles.filter(v =>
-    v.marca.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    v.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    v.placa.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredVehicles = vehicles?.filter(v =>
+    v && v.marca && v.modelo && v.placa && (
+      v.marca.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      v.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      v.placa.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  ) || [];
 
   return (
     <div>

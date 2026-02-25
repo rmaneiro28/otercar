@@ -67,7 +67,8 @@ const Inventory = () => {
         }
     };
 
-    const filteredInventory = inventory.filter(item => {
+    const filteredInventory = inventory?.filter(item => {
+        if (!item || !item.nombre) return false;
         const matchesSearch = item.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
             (item.numero_parte && item.numero_parte.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (item.categoria && item.categoria.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -75,7 +76,7 @@ const Inventory = () => {
         const matchesCategory = categoryFilter === '' || item.categoria === categoryFilter;
 
         return matchesSearch && matchesCategory;
-    });
+    }) || [];
 
     return (
         <div>

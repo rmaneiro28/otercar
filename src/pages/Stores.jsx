@@ -53,9 +53,9 @@ const Stores = () => {
         }
     };
 
-    const filteredStores = stores.filter(s =>
-        s.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredStores = stores?.filter(s =>
+        s && s.nombre && s.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+    ) || [];
 
     return (
         <div>

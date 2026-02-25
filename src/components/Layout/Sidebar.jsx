@@ -16,32 +16,30 @@ const Sidebar = () => {
             ]
         },
         {
-            title: 'Flota y Clientes',
+            title: 'Mi Flota',
             items: [
-                { icon: Car, label: 'Vehículos', path: '/vehicles' },
-                ...(isTaller ? [
-                    { icon: Users, label: 'Clientes', path: '/owners' },
-                    { icon: Users, label: 'Mecánicos', path: '/mechanics' }
-                ] : [])
+                { icon: Car, label: 'Mis Vehículos', path: '/vehicles' },
+                ...(isTaller ? [{ icon: Users, label: 'Clientes', path: '/owners' }] : []),
+                { icon: Users, label: isTaller ? 'Mecánicos' : 'Mis Mecánicos', path: '/mechanics' }
             ]
         },
         {
-            title: 'Operaciones',
+            title: 'Servicios',
             items: [
-                { icon: FileText, label: 'Mantenimiento', path: '/maintenance' },
+                { icon: FileText, label: isTaller ? 'Historial de Servicios' : 'Mis Mantenimientos', path: '/maintenance' },
                 ...(isTaller ? [] : [
-                    { icon: FileText, label: 'Documentación', path: '/documents' },
-                    { icon: Fuel, label: 'Combustible', path: '/fuel' }
+                    { icon: FileText, label: 'Mi Documentación', path: '/documents' },
+                    { icon: Fuel, label: 'Cargas de Combustible', path: '/fuel' }
                 ]),
-                { icon: CalendarIcon, label: 'Agenda', path: '/calendar' },
+                { icon: CalendarIcon, label: 'Agenda / Citas', path: '/calendar' },
             ]
         },
         {
-            title: 'Gestión',
+            title: isTaller ? 'Administración' : 'Mis Herramientas',
             items: [
-                { icon: Wrench, label: 'Inventario', path: '/inventory' },
-                { icon: Store, label: 'Tiendas', path: '/stores' },
-                { icon: Sparkles, label: 'Historial IA', path: '/ai-history' },
+                { icon: Wrench, label: 'Inventario / Repuestos', path: '/inventory' },
+                { icon: Store, label: isTaller ? 'Tiendas / Aliados' : 'Tiendas Favoritas', path: '/stores' },
+                { icon: Sparkles, label: isTaller ? 'Asistente IA' : 'Recomendaciones IA', path: '/ai-history' },
             ]
         }
     ];
