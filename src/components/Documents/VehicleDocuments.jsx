@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { FileText, Plus, Trash2, Calendar, AlertTriangle, ExternalLink, Paperclip } from 'lucide-react';
+import { FileText, Plus, Trash2, Calendar, AlertTriangle, ExternalLink, Paperclip, Edit2, X } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import { toast } from 'sonner';
 
 const VehicleDocuments = ({ vehicleId }) => {
-    const { documents, addDocument, deleteDocument } = useData();
+    const { documents, addDocument, updateDocument, deleteDocument } = useData();
     const [isAdding, setIsAdding] = useState(false);
+    const [editingDoc, setEditingDoc] = useState(null);
     const [uploading, setUploading] = useState(false);
 
     // Form State
@@ -15,41 +16,72 @@ const VehicleDocuments = ({ vehicleId }) => {
         fecha_vencimiento: '',
     });
     const [file, setFile] = useState(null);
+    const [preview, setPreview] = useState(null);
 
     const vehicleDocs = documents.filter(d => d.vehiculo_id === vehicleId);
 
-    // Filter Logic
-    // const expiredDocs = vehicleDocs.filter(d => d.fecha_vencimiento && new Date(d.fecha_vencimiento) < new Date());
-    // const activeDocs = vehicleDocs.filter(d => !d.fecha_vencimiento || new Date(d.fecha_vencimiento) >= new Date());
-
     const handleFileChange = (e) => {
-        if (e.target.files[0]) {
-            setFile(e.target.files[0]);
+        const selectedFile = e.target.files[0];
+        if (selectedFile) {
+            setFile(selectedFile);
+            if (selectedFile.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onloadend = () => setPreview(reader.result);
+                reader.readAsDataURL(selectedFile);
+            } else {
+                setPreview(null);
+            }
         }
+    };
+
+    const handleEdit = (doc) => {
+        setEditingDoc(doc);
+        setFormData({
+            titulo: doc.titulo,
+            tipo: doc.tipo,
+            fecha_vencimiento: doc.fecha_vencimiento || '',
+        });
+        setPreview(doc.url_archivo?.match(/\.(jpg|jpeg|png|webp|gif|svg)$/i) ? doc.url_archivo : null);
+        setIsAdding(true);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setUploading(true);
 
-        const newDoc = {
+        const docPayload = {
             vehiculo_id: vehicleId,
             titulo: formData.titulo,
             tipo: formData.tipo,
             fecha_vencimiento: formData.fecha_vencimiento || null,
         };
 
-        const { error } = await addDocument(newDoc, file);
-
-        if (error) {
-            toast.error(error.message || 'Error al guardar documento');
+        let result;
+        if (editingDoc) {
+            result = await updateDocument(editingDoc.id, { ...editingDoc, ...docPayload }, file);
         } else {
-            toast.success('Documento agregado');
+            result = await addDocument(docPayload, file);
+        }
+
+        if (result.error) {
+            toast.error(result.error.message || 'Error al guardar documento');
+        } else {
+            toast.success(editingDoc ? 'Documento actualizado' : 'Documento agregado');
             setIsAdding(false);
+            setEditingDoc(null);
             setFormData({ titulo: '', tipo: 'Seguro', fecha_vencimiento: '' });
             setFile(null);
+            setPreview(null);
         }
         setUploading(false);
+    };
+
+    const handleCancel = () => {
+        setIsAdding(false);
+        setEditingDoc(null);
+        setFormData({ titulo: '', tipo: 'Seguro', fecha_vencimiento: '' });
+        setFile(null);
+        setPreview(null);
     };
 
     const handleDelete = async (doc) => {
@@ -80,14 +112,14 @@ const VehicleDocuments = ({ vehicleId }) => {
                     Documentación
                 </h3>
                 <button
-                    onClick={() => setIsAdding(!isAdding)}
+                    onClick={() => isAdding ? handleCancel() : setIsAdding(true)}
                     className="text-sm bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-100 font-medium transition-colors"
                 >
                     {isAdding ? 'Cancelar' : '+ Agregar Documento'}
                 </button>
             </div>
 
-            {/* ADD FORM */}
+            {/* ADD / EDIT FORM */}
             {isAdding && (
                 <form onSubmit={handleSubmit} className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 animate-in fade-in slide-in-from-top-2">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -126,7 +158,9 @@ const VehicleDocuments = ({ vehicleId }) => {
                             />
                         </div>
                         <div>
-                            <label className="block text-xs font-semibold text-slate-500 mb-1">Archivo (Imagen/PDF)</label>
+                            <label className="block text-xs font-semibold text-slate-500 mb-1">
+                                {editingDoc ? 'Reemplazar Archivo (Opcional)' : 'Archivo (Imagen/PDF)'}
+                            </label>
                             <div className="relative">
                                 <input
                                     type="file"
@@ -142,13 +176,34 @@ const VehicleDocuments = ({ vehicleId }) => {
                             </div>
                         </div>
                     </div>
+
+                    {preview && (
+                        <div className="mb-4">
+                            <p className="text-xs font-semibold text-slate-500 mb-2">Vista Previa:</p>
+                            <div className="relative w-full max-w-md h-48 bg-slate-100 dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+                                <img
+                                    src={preview}
+                                    alt="Preview"
+                                    className="w-full h-full object-contain"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => { setFile(null); setPreview(null); }}
+                                    className="absolute top-2 right-2 p-1.5 bg-red-500 text-white rounded-full hover:bg-red-600 shadow-lg"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="flex justify-end">
                         <button
                             type="submit"
                             disabled={uploading}
                             className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50"
                         >
-                            {uploading ? 'Guardando...' : 'Guardar Documento'}
+                            {uploading ? 'Guardando...' : editingDoc ? 'Actualizar Documento' : 'Guardar Documento'}
                         </button>
                     </div>
                 </form>
@@ -198,6 +253,14 @@ const VehicleDocuments = ({ vehicleId }) => {
                                             <ExternalLink className="w-4 h-4" />
                                         </a>
                                     )}
+
+                                    <button
+                                        onClick={() => handleEdit(doc)}
+                                        className="p-1.5 text-slate-400 hover:text-indigo-500 transition-colors"
+                                        title="Editar"
+                                    >
+                                        <Edit2 className="w-4 h-4" />
+                                    </button>
 
                                     <button
                                         onClick={() => handleDelete(doc)}

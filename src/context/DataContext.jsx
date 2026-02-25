@@ -780,6 +780,52 @@ export const DataProvider = ({ children }) => {
 
 
     // --- Documents (Documentos) ---
+    const compressImage = async (file) => {
+        // Only compress images
+        if (!file.type.startsWith('image/')) return file;
+
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    // Max dimension (e.g., 1200px)
+                    const MAX_SIZE = 1200;
+                    if (width > height) {
+                        if (width > MAX_SIZE) {
+                            height *= MAX_SIZE / width;
+                            width = MAX_SIZE;
+                        }
+                    } else {
+                        if (height > MAX_SIZE) {
+                            width *= MAX_SIZE / height;
+                            height = MAX_SIZE;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    canvas.toBlob((blob) => {
+                        const compressedFile = new File([blob], file.name, {
+                            type: 'image/jpeg',
+                            lastModified: Date.now(),
+                        });
+                        resolve(compressedFile);
+                    }, 'image/jpeg', 0.7); // 70% quality
+                };
+            };
+        });
+    };
+
     const addDocument = async (docData, file) => {
         if (!profile?.empresa_id) {
             return { error: { message: 'Error de sesión' } };
@@ -789,24 +835,29 @@ export const DataProvider = ({ children }) => {
 
         // 1. Upload File (if present)
         if (file) {
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${Math.random()}.${fileExt}`;
-            const filePath = `${docData.vehiculo_id}/${fileName}`;
+            try {
+                // COMPRESSION BEFORE UPLOAD
+                const fileToUpload = file.type.startsWith('image/') ? await compressImage(file) : file;
 
-            const { error: uploadError } = await supabase.storage
-                .from('documentos')
-                .upload(filePath, file);
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+                const filePath = `${docData.vehiculo_id}/${fileName}`;
 
-            if (uploadError) {
-                console.error('Error uploading file:', uploadError);
-                return { error: { message: 'Error al subir archivo. Verifica que exista el bucket "documentos".' } };
+                const { error: uploadError } = await supabase.storage
+                    .from('documentos')
+                    .upload(filePath, fileToUpload);
+
+                if (uploadError) throw uploadError;
+
+                const { data: publicUrlData } = supabase.storage
+                    .from('documentos')
+                    .getPublicUrl(filePath);
+
+                fileUrl = publicUrlData.publicUrl;
+            } catch (error) {
+                console.error('Error handling file:', error);
+                return { error: { message: 'Error al procesar/subir archivo. Verifica el bucket "documentos".' } };
             }
-
-            const { data: publicUrlData } = supabase.storage
-                .from('documentos')
-                .getPublicUrl(filePath);
-
-            fileUrl = publicUrlData.publicUrl;
         }
 
         // 2. Insert Record
@@ -826,6 +877,62 @@ export const DataProvider = ({ children }) => {
         }
 
         setDocuments([data[0], ...documents]);
+        return { data: data[0] };
+    };
+
+    const updateDocument = async (id, updatedData, file) => {
+        let fileUrl = updatedData.url_archivo;
+
+        // 1. Handle New File Upload (if present)
+        if (file) {
+            try {
+                // COMPRESSION BEFORE UPLOAD
+                const fileToUpload = file.type.startsWith('image/') ? await compressImage(file) : file;
+
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${Math.random().toString(36).substring(2)}.${fileExt}`;
+                const filePath = `${updatedData.vehiculo_id}/${fileName}`;
+
+                // Upload new file
+                const { error: uploadError } = await supabase.storage
+                    .from('documentos')
+                    .upload(filePath, fileToUpload);
+
+                if (uploadError) throw uploadError;
+
+                const { data: publicUrlData } = supabase.storage
+                    .from('documentos')
+                    .getPublicUrl(filePath);
+
+                fileUrl = publicUrlData.publicUrl;
+
+                // Cleanup old file if it existed
+                if (updatedData.url_archivo) {
+                    const oldPath = updatedData.url_archivo.split('/documentos/')[1];
+                    if (oldPath) await supabase.storage.from('documentos').remove([oldPath]);
+                }
+            } catch (error) {
+                console.error('Error handling file update:', error);
+                return { error: { message: 'Error al actualizar archivo.' } };
+            }
+        }
+
+        // 2. Update Record
+        const { data, error } = await supabase
+            .from('documentos_vehiculo')
+            .update({
+                ...updatedData,
+                url_archivo: fileUrl
+            })
+            .eq('id', id)
+            .select();
+
+        if (error) {
+            console.error('Error updating document:', error.message);
+            return { error };
+        }
+
+        setDocuments(documents.map(d => d.id === id ? data[0] : d));
         return { data: data[0] };
     };
 
@@ -932,7 +1039,7 @@ export const DataProvider = ({ children }) => {
         stores, addStore, updateStore, deleteStore,
         maintenance, addMaintenance, updateMaintenance, addFuelRecord,
         recommendations, addRecommendation, deleteRecommendation,
-        documents, addDocument, deleteDocument,
+        documents, addDocument, updateDocument, deleteDocument,
         events, addEvent, deleteEvent, // Expose events
         notifications, addNotification, markNotificationAsRead, markAllNotificationsAsRead,
         loading
