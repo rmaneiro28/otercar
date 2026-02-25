@@ -51,7 +51,7 @@ const Inventory = () => {
         if (editingPart) {
             result = await updatePart(editingPart.id, data);
             if (result && result.error) {
-                toast.error('Error al actualizar repuesto');
+                toast.error(result.error.message || 'Error al actualizar repuesto');
             } else {
                 toast.success('Repuesto actualizado correctamente');
                 setIsModalOpen(false);

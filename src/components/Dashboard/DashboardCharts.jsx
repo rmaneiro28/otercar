@@ -17,7 +17,6 @@ const DashboardCharts = () => {
             return Math.max(labor, total);
         };
 
-        console.log('--- Calculation Start ---');
 
         for (let i = 5; i >= 0; i--) {
             // Get target month/year
@@ -46,7 +45,7 @@ const DashboardCharts = () => {
                 }
 
                 const match = recordYear === targetYear && recordMonth === targetMonth;
-                if (match) console.log(`Match for ${monthName}:`, m.fecha, getCost(m));
+                if (match) { /* match log removed */ }
                 return match;
             });
 
@@ -91,10 +90,6 @@ const DashboardCharts = () => {
     const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444'];
 
     // Debug Logs
-    console.log('--- Chart Debug ---');
-    console.log('Records Found:', maintenance.length);
-    console.log('Sample Record:', maintenance[0]);
-    console.log('Monthly Data Calculated:', monthlyData);
 
     // No data checking
     if (maintenance.length === 0) {

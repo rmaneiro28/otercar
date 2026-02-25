@@ -6,7 +6,18 @@ import { Link } from 'react-router-dom';
 
 const Header = () => {
     const { user, profile, signOut } = useAuth();
-    const { notifications, markNotificationAsRead, markAllNotificationsAsRead, vehicles, inventory, mechanics, documents, owners } = useData();
+    const {
+        notifications,
+        markNotificationAsRead,
+        markAllNotificationsAsRead,
+        vehicles,
+        inventory,
+        mechanics,
+        documents,
+        owners,
+        maintenance,
+        stores
+    } = useData();
     const [showNotifications, setShowNotifications] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -18,7 +29,10 @@ const Header = () => {
         mechanics: [],
         documents: [],
         owners: [],
-        notifications: []
+        notifications: [],
+        maintenance: [],
+        fuel: [],
+        stores: []
     });
     const [showSearch, setShowSearch] = useState(false);
 
@@ -30,37 +44,58 @@ const Header = () => {
 
         if (query.length > 1) {
             const lowerQ = query.toLowerCase();
+
             const foundVehicles = vehicles?.filter(v =>
-                v.marca.toLowerCase().includes(lowerQ) ||
-                v.modelo.toLowerCase().includes(lowerQ) ||
-                v.placa.toLowerCase().includes(lowerQ)
+                v?.marca?.toLowerCase()?.includes(lowerQ) ||
+                v?.modelo?.toLowerCase()?.includes(lowerQ) ||
+                v?.placa?.toLowerCase()?.includes(lowerQ)
             ).slice(0, 3) || [];
 
             const foundInventory = inventory?.filter(i =>
-                i && i.nombre && (
-                    i.nombre.toLowerCase().includes(lowerQ) ||
-                    i.codigo?.toLowerCase().includes(lowerQ)
-                )
+                i?.nombre?.toLowerCase()?.includes(lowerQ) ||
+                i?.codigo?.toLowerCase()?.includes(lowerQ)
             ).slice(0, 3) || [];
 
             const foundMechanics = mechanics?.filter(m =>
-                m && m.nombre && m.nombre.toLowerCase().includes(lowerQ)
+                m?.nombre?.toLowerCase()?.includes(lowerQ) ||
+                m?.especialidad?.toLowerCase()?.includes(lowerQ)
             ).slice(0, 3) || [];
 
             const foundDocuments = documents?.filter(d =>
-                d.titulo.toLowerCase().includes(lowerQ) ||
-                d.tipo.toLowerCase().includes(lowerQ)
+                d?.titulo?.toLowerCase()?.includes(lowerQ) ||
+                d?.tipo?.toLowerCase()?.includes(lowerQ)
             ).slice(0, 3) || [];
 
             const foundOwners = owners?.filter(o =>
-                o.nombre.toLowerCase().includes(lowerQ) ||
-                o.apellido.toLowerCase().includes(lowerQ) ||
-                o.cedula?.toLowerCase().includes(lowerQ)
+                o?.nombre?.toLowerCase()?.includes(lowerQ) ||
+                o?.apellido?.toLowerCase()?.includes(lowerQ) ||
+                o?.cedula?.toLowerCase()?.includes(lowerQ)
             ).slice(0, 3) || [];
 
             const foundNotifications = notifications?.filter(n =>
-                n.titulo.toLowerCase().includes(lowerQ) ||
-                n.mensaje.toLowerCase().includes(lowerQ)
+                n?.titulo?.toLowerCase()?.includes(lowerQ) ||
+                n?.mensaje?.toLowerCase()?.includes(lowerQ)
+            ).slice(0, 3) || [];
+
+            const foundMaintenance = maintenance?.filter(m =>
+                m?.tipo !== 'Combustible' && (
+                    m?.descripcion?.toLowerCase()?.includes(lowerQ) ||
+                    m?.tipo?.toLowerCase()?.includes(lowerQ) ||
+                    m?.notas?.toLowerCase()?.includes(lowerQ)
+                )
+            ).slice(0, 3) || [];
+
+            const foundFuel = maintenance?.filter(m =>
+                m?.tipo === 'Combustible' && (
+                    m?.descripcion?.toLowerCase()?.includes(lowerQ) ||
+                    m?.notas?.toLowerCase()?.includes(lowerQ)
+                )
+            ).slice(0, 3) || [];
+
+            const foundStores = stores?.filter(s =>
+                s?.nombre?.toLowerCase()?.includes(lowerQ) ||
+                s?.categoria?.toLowerCase()?.includes(lowerQ) ||
+                s?.direccion?.toLowerCase()?.includes(lowerQ)
             ).slice(0, 3) || [];
 
             setSearchResults({
@@ -69,7 +104,10 @@ const Header = () => {
                 mechanics: foundMechanics,
                 documents: foundDocuments,
                 owners: foundOwners,
-                notifications: foundNotifications
+                notifications: foundNotifications,
+                maintenance: foundMaintenance,
+                fuel: foundFuel,
+                stores: foundStores
             });
             setShowSearch(true);
         } else {
@@ -145,7 +183,7 @@ const Header = () => {
                                 <div className="p-2 border-t border-slate-100 dark:border-slate-800">
                                     <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase px-2 mb-1">Clientes</h4>
                                     {searchResults.owners.map(o => (
-                                        <Link key={o.id} to="/clients" className="block px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg">
+                                        <Link key={o.id} to="/owners" className="block px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg">
                                             <p className="text-sm font-bold text-slate-800 dark:text-white">{o.nombre} {o.apellido}</p>
                                             <p className="text-xs text-slate-500">{o.cedula || 'Sin ID'}</p>
                                         </Link>
@@ -175,6 +213,45 @@ const Header = () => {
                                             <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{n.titulo}</p>
                                             <p className="text-xs text-slate-500 truncate">{n.mensaje}</p>
                                         </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Maintenance Section */}
+                            {searchResults.maintenance.length > 0 && (
+                                <div className="p-2 border-t border-slate-100 dark:border-slate-800">
+                                    <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase px-2 mb-1">Mantenimientos</h4>
+                                    {searchResults.maintenance.map(m => (
+                                        <Link key={m.id} to="/maintenance" className="block px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg">
+                                            <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{m.descripcion || m.tipo}</p>
+                                            <p className="text-xs text-slate-500">{new Date(m.fecha).toLocaleDateString()} - {m.kilometraje} km</p>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Fuel Section */}
+                            {searchResults.fuel.length > 0 && (
+                                <div className="p-2 border-t border-slate-100 dark:border-slate-800">
+                                    <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase px-2 mb-1">Combustible</h4>
+                                    {searchResults.fuel.map(f => (
+                                        <Link key={f.id} to="/fuel" className="block px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg">
+                                            <p className="text-sm font-bold text-slate-800 dark:text-white">Carga de Combustible</p>
+                                            <p className="text-xs text-slate-500">{new Date(f.fecha).toLocaleDateString()} - {f.kilometraje} km</p>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Stores Section */}
+                            {searchResults.stores.length > 0 && (
+                                <div className="p-2 border-t border-slate-100 dark:border-slate-800">
+                                    <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase px-2 mb-1">Tiendas / Aliados</h4>
+                                    {searchResults.stores.map(s => (
+                                        <Link key={s.id} to="/stores" className="block px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg">
+                                            <p className="text-sm font-bold text-slate-800 dark:text-white">{s.nombre}</p>
+                                            <p className="text-xs text-slate-500">{s.categoria || 'Tienda'}</p>
+                                        </Link>
                                     ))}
                                 </div>
                             )}

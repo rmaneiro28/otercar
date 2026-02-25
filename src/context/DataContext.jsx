@@ -171,7 +171,7 @@ export const DataProvider = ({ children }) => {
 
     const performAutoScan = async () => {
         setIsScanning(true);
-        console.log('🔄 Starting Automated Vehicle Scan...');
+        setIsScanning(true);
         let newNotificationsCount = 0;
 
         try {
@@ -188,7 +188,6 @@ export const DataProvider = ({ children }) => {
 
                 // Condition: No rec exists OR Main Rec is too old
                 if (!latestRec || new Date(latestRec.created_at) < sevenDaysAgo) {
-                    console.log(`Analyzing vehicle: ${vehicle.marca} ${vehicle.modelo}...`);
                     // Fetch history locally from state
                     const history = maintenance.filter(m => m.vehiculo_id === vehicle.id);
 
@@ -248,7 +247,6 @@ export const DataProvider = ({ children }) => {
             newNotificationsCount += docAlerts;
 
             if (newNotificationsCount > 0) {
-                console.log(`Scan complete. ${newNotificationsCount} new alerts.`);
             }
         } catch (error) {
             console.error('Auto Scan Error:', error);
@@ -339,12 +337,31 @@ export const DataProvider = ({ children }) => {
     };
 
     const updateVehicle = async (id, updated) => {
-        const { data, error } = await supabase.from('vehiculos').update(updated).eq('id', id).select();
+        if (!user) {
+            return { error: { message: 'Error de sesión: Usuario no autenticado.' } };
+        }
+        const empresaId = profile?.empresa_id;
+
+        // Sanitize update data
+        const { id: _id, created_at: _ca, updated_at: _ua, ...cleanData } = updated;
+
+        const vehicleToUpdate = {
+            ...cleanData,
+            usuario_id: user.id,
+            empresa_id: empresaId || null
+        };
+
+        const { data, error } = await supabase.from('vehiculos').update(vehicleToUpdate).eq('id', id).select();
         if (error) {
             console.error('Error updating vehicle:', error.message);
             return { error };
         }
-        setVehicles(vehicles.map(v => v.id === id ? data[0] : v));
+
+        if (!data || data.length === 0) {
+            return { error: { message: 'No se recibió confirmación del servidor.' } };
+        }
+
+        setVehicles(prev => prev.map(v => v?.id === id ? data[0] : v));
         return { data: data[0] };
     };
 
@@ -411,12 +428,31 @@ export const DataProvider = ({ children }) => {
     };
 
     const updatePart = async (id, updated) => {
-        const { data, error } = await supabase.from('inventario').update(updated).eq('id', id).select();
+        if (!user) {
+            return { error: { message: 'Error de sesión: Usuario no autenticado.' } };
+        }
+        const empresaId = profile?.empresa_id;
+
+        // Sanitize update data
+        const { id: _id, created_at: _ca, updated_at: _ua, ...cleanData } = updated;
+
+        const partToUpdate = {
+            ...cleanData,
+            usuario_id: user.id,
+            empresa_id: empresaId || null
+        };
+
+        const { data, error } = await supabase.from('inventario').update(partToUpdate).eq('id', id).select();
         if (error) {
             console.error('Error updating part:', error.message);
             return { error };
         }
-        setInventory(inventory.map(i => i.id === id ? data[0] : i));
+
+        if (!data || data.length === 0) {
+            return { error: { message: 'No se recibió confirmación del servidor. Verifica tus permisos.' } };
+        }
+
+        setInventory(prev => prev.map(i => i?.id === id ? data[0] : i));
         return { data: data[0] };
     };
 
@@ -446,12 +482,31 @@ export const DataProvider = ({ children }) => {
     };
 
     const updateMechanic = async (id, updated) => {
-        const { data, error } = await supabase.from('mecanicos').update(updated).eq('id', id).select();
+        if (!user) {
+            return { error: { message: 'Error de sesión: Usuario no autenticado.' } };
+        }
+        const empresaId = profile?.empresa_id;
+
+        // Sanitize update data
+        const { id: _id, created_at: _ca, updated_at: _ua, ...cleanData } = updated;
+
+        const mechanicToUpdate = {
+            ...cleanData,
+            usuario_id: user.id,
+            empresa_id: empresaId || null
+        };
+
+        const { data, error } = await supabase.from('mecanicos').update(mechanicToUpdate).eq('id', id).select();
         if (error) {
             console.error('Error updating mechanic:', error.message);
             return { error };
         }
-        setMechanics(mechanics.map(m => m.id === id ? data[0] : m));
+
+        if (!data || data.length === 0) {
+            return { error: { message: 'No se recibió confirmación del servidor.' } };
+        }
+
+        setMechanics(prev => prev.map(m => m?.id === id ? data[0] : m));
         return { data: data[0] };
     };
 
@@ -481,12 +536,31 @@ export const DataProvider = ({ children }) => {
     };
 
     const updateStore = async (id, updated) => {
-        const { data, error } = await supabase.from('tiendas').update(updated).eq('id', id).select();
+        if (!user) {
+            return { error: { message: 'Error de sesión: Usuario no autenticado.' } };
+        }
+        const empresaId = profile?.empresa_id;
+
+        // Sanitize update data
+        const { id: _id, created_at: _ca, updated_at: _ua, ...cleanData } = updated;
+
+        const storeToUpdate = {
+            ...cleanData,
+            usuario_id: user.id,
+            empresa_id: empresaId || null
+        };
+
+        const { data, error } = await supabase.from('tiendas').update(storeToUpdate).eq('id', id).select();
         if (error) {
             console.error('Error updating store:', error.message);
             return { error };
         }
-        setStores(stores.map(s => s.id === id ? data[0] : s));
+
+        if (!data || data.length === 0) {
+            return { error: { message: 'No se recibió confirmación del servidor.' } };
+        }
+
+        setStores(prev => prev.map(s => s?.id === id ? data[0] : s));
         return { data: data[0] };
     };
 
@@ -617,7 +691,6 @@ export const DataProvider = ({ children }) => {
     const updateMaintenance = async (id, updatedMaint, parts = []) => {
         if (!id) return { error: { message: 'ID de mantenimiento requerido para actualizar.' } };
 
-        console.log(`[DataContext] Iniciando actualización de mantenimiento ID: ${id}`, { updatedMaint, partsCount: parts.length });
 
         try {
             // 0. DIAGNOSTIC: Check if the record even exists and who owns it
@@ -632,13 +705,7 @@ export const DataProvider = ({ children }) => {
                 throw new Error('No se puede encontrar el registro a editar. Es posible que no tengas permisos de acceso.');
             }
 
-            console.log('[DataContext] DIAGNÓSTICO: Registro encontrado.', {
-                auth_user: user?.id,
-                auth_empresa: profile?.empresa_id,
-                record_user: existing.usuario_id,
-                record_empresa: existing.empresa_id,
-                record_vehiculo: existing.vehiculo_id
-            });
+            /* console.log logic removed */
 
             // 1. Rollback stock of old parts
             const { data: oldParts, error: fetchOldPartsError } = await supabase
@@ -649,7 +716,6 @@ export const DataProvider = ({ children }) => {
             if (fetchOldPartsError) throw fetchOldPartsError;
 
             if (oldParts && oldParts.length > 0) {
-                console.log(`[DataContext] Reversando stock de ${oldParts.length} repuestos antiguos...`);
                 for (const op of oldParts) {
                     const { data: cp } = await supabase
                         .from('inventario')
@@ -701,11 +767,9 @@ export const DataProvider = ({ children }) => {
                 throw new Error('Supabase denegó el guardado. Falta la política RLS de UPDATE para cuentas personales.');
             }
 
-            console.log('[DataContext] Registro principal actualizado exitosamente.');
 
             // 4. Insert new part links
             if (parts.length > 0) {
-                console.log(`[DataContext] Registrando ${parts.length} nuevos repuestos...`);
                 const partsToInsert = parts.map(p => ({
                     mantenimiento_id: id,
                     repuesto_id: p.id,
@@ -737,7 +801,6 @@ export const DataProvider = ({ children }) => {
                 }
             }
 
-            console.log('[DataContext] Actualización completa. Refrescando datos...');
             // Refresh local state
             await fetchData();
             return { data: updatedData[0] };
@@ -881,6 +944,11 @@ export const DataProvider = ({ children }) => {
     };
 
     const updateDocument = async (id, updatedData, file) => {
+        if (!user) {
+            return { error: { message: 'Error de sesión: Usuario no autenticado.' } };
+        }
+        const empresaId = profile?.empresa_id;
+
         let fileUrl = updatedData.url_archivo;
 
         // 1. Handle New File Upload (if present)
@@ -917,12 +985,16 @@ export const DataProvider = ({ children }) => {
             }
         }
 
-        // 2. Update Record
+        // Sanitize update data
+        const { id: _id, created_at: _ca, updated_at: _ua, ...cleanData } = updatedData;
+
         const { data, error } = await supabase
             .from('documentos_vehiculo')
             .update({
-                ...updatedData,
-                url_archivo: fileUrl
+                ...cleanData,
+                url_archivo: fileUrl,
+                usuario_id: user.id,
+                empresa_id: empresaId || null
             })
             .eq('id', id)
             .select();
@@ -932,7 +1004,11 @@ export const DataProvider = ({ children }) => {
             return { error };
         }
 
-        setDocuments(documents.map(d => d.id === id ? data[0] : d));
+        if (!data || data.length === 0) {
+            return { error: { message: 'No se recibió confirmación del servidor.' } };
+        }
+
+        setDocuments(prev => prev.map(d => d?.id === id ? data[0] : d));
         return { data: data[0] };
     };
 

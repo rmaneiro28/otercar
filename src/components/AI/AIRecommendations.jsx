@@ -34,10 +34,8 @@ const AIRecommendations = ({ vehicle }) => {
 
             // --- AUTOMATIC NOTIFICATION GENERATION ---
             const priority = insight.prioridad ? insight.prioridad.toLowerCase() : '';
-            console.log('AI Insight Priority:', priority); // Debugging
 
             if (['alta', 'high', 'media', 'medium'].includes(priority)) {
-                console.log('Generating Notification...');
                 const notifType = (priority === 'alta' || priority === 'high') ? 'alert' : 'warning';
 
                 const { error: notifError } = await addNotification({

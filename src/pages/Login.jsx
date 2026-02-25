@@ -18,7 +18,6 @@ const Login = () => {
         setLoading(true);
         // Trim email to remove accidental whitespace
         const cleanEmail = email.trim();
-        console.log('Attempting login with:', cleanEmail);
 
         const { error } = await signIn(cleanEmail, password);
 

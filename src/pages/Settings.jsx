@@ -254,7 +254,7 @@ const Settings = () => {
                                             const module = await import('../utils/excelHandler');
                                             // We need to implement processImport in excelHandler first, but for now we can parse
                                             const data = await module.parseImportFile(file);
-                                            console.log('Parsed Data:', data);
+                                            // Parsed data handling logic
 
                                             // TODO: Call actual import logic here
                                             // await module.processImport(data, { addClient, addVehicle, ... });
