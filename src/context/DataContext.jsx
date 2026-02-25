@@ -33,15 +33,14 @@ export const DataProvider = ({ children }) => {
         if (!userEmail || !userId) return;
 
         try {
-            // 1. Fetch company details if empresaId exists
+            // 1. Fetch company details (try by empresaId, then by owner_id)
             if (empresaId) {
-                const { data: companyData } = await supabase
-                    .from('empresas')
-                    .select('*')
-                    .eq('id', empresaId)
-                    .single();
-
+                const { data: companyData } = await supabase.from('empresas').select('*').eq('id', empresaId).maybeSingle();
                 if (companyData) setCompany(companyData);
+            } else if (userId) {
+                // Fallback: search by owner_id if not linked in profile
+                const { data: ownerCompany } = await supabase.from('empresas').select('*').eq('owner_id', userId).maybeSingle();
+                if (ownerCompany) setCompany(ownerCompany);
             }
 
             // --- AUTO-LINKING LOGIC ---
@@ -753,7 +752,8 @@ export const DataProvider = ({ children }) => {
         if (!user) {
             return { error: { message: 'Error de sesión: Usuario no autenticado.' } };
         }
-        const plan = company?.plan || 'free';
+
+        const plan = (company?.plan || 'free').toLowerCase();
         if (plan === 'free') {
             return { error: { message: 'Tu plan actual no incluye IA. Actualiza a Estándar o Premium.' } };
         }
