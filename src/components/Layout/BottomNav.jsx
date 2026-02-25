@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Car, Wrench, Users, Store, Plus, Menu, X, Sparkles, FileText, Settings, Fuel } from 'lucide-react';
+import { LayoutDashboard, Car, Wrench, Users, Store, Plus, Menu, X, Sparkles, FileText, Settings, Fuel, Calendar } from 'lucide-react';
 import clsx from 'clsx';
 
 import { useAuth } from '../../context/AuthContext';
@@ -21,6 +21,7 @@ const BottomNav = () => {
     ];
 
     const moreMenuLinks = [
+        { icon: Calendar, label: 'Agenda', path: '/calendar' },
         { icon: Wrench, label: 'Inventario', path: '/inventory' },
         { icon: Users, label: 'Mecánicos', path: '/mechanics' },
         { icon: Store, label: 'Tiendas', path: '/stores' },

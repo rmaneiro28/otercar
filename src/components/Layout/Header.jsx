@@ -6,13 +6,20 @@ import { Link } from 'react-router-dom';
 
 const Header = () => {
     const { user, profile, signOut } = useAuth();
-    const { notifications, markNotificationAsRead, markAllNotificationsAsRead, vehicles, inventory, mechanics } = useData();
+    const { notifications, markNotificationAsRead, markAllNotificationsAsRead, vehicles, inventory, mechanics, documents, owners } = useData();
     const [showNotifications, setShowNotifications] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
 
     // Search State
     const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState({ vehicles: [], inventory: [], mechanics: [] });
+    const [searchResults, setSearchResults] = useState({
+        vehicles: [],
+        inventory: [],
+        mechanics: [],
+        documents: [],
+        owners: [],
+        notifications: []
+    });
     const [showSearch, setShowSearch] = useState(false);
 
     const unreadCount = notifications ? notifications.filter(n => !n.leida).length : 0;
@@ -40,7 +47,30 @@ const Header = () => {
                 m && m.nombre && m.nombre.toLowerCase().includes(lowerQ)
             ).slice(0, 3) || [];
 
-            setSearchResults({ vehicles: foundVehicles, inventory: foundInventory, mechanics: foundMechanics });
+            const foundDocuments = documents?.filter(d =>
+                d.titulo.toLowerCase().includes(lowerQ) ||
+                d.tipo.toLowerCase().includes(lowerQ)
+            ).slice(0, 3) || [];
+
+            const foundOwners = owners?.filter(o =>
+                o.nombre.toLowerCase().includes(lowerQ) ||
+                o.apellido.toLowerCase().includes(lowerQ) ||
+                o.cedula?.toLowerCase().includes(lowerQ)
+            ).slice(0, 3) || [];
+
+            const foundNotifications = notifications?.filter(n =>
+                n.titulo.toLowerCase().includes(lowerQ) ||
+                n.mensaje.toLowerCase().includes(lowerQ)
+            ).slice(0, 3) || [];
+
+            setSearchResults({
+                vehicles: foundVehicles,
+                inventory: foundInventory,
+                mechanics: foundMechanics,
+                documents: foundDocuments,
+                owners: foundOwners,
+                notifications: foundNotifications
+            });
             setShowSearch(true);
         } else {
             setShowSearch(false);
@@ -55,17 +85,17 @@ const Header = () => {
                 <span className="font-extrabold text-slate-800 dark:text-white tracking-tight">Oter<span className="text-blue-600">Car</span></span>
             </div>
 
-            <div className="flex items-center gap-4 flex-1 max-w-xl relative">
-                <div className="relative w-full max-w-[200px] md:max-w-full">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 md:w-5 md:h-5" />
+            <div className="flex-1 max-w-xl relative mx-2 md:mx-4">
+                <div className="relative w-full group">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors w-4 h-4 md:w-5 md:h-5" />
                     <input
                         type="text"
                         value={searchQuery}
                         onChange={handleSearch}
                         onFocus={() => searchQuery.length > 1 && setShowSearch(true)}
                         onBlur={() => setTimeout(() => setShowSearch(false), 200)} // Delay to allow click
-                        placeholder="Buscar vehículo, repuesto..."
-                        className="w-full pl-9 md:pl-10 pr-4 py-2 bg-slate-100 dark:bg-slate-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-slate-700 transition-all duration-200 text-sm text-slate-700 dark:text-slate-200 placeholder:text-slate-400"
+                        placeholder="Buscar en toda la aplicación..."
+                        className="w-full pl-10 pr-4 py-2.5 bg-slate-100 dark:bg-slate-800 border border-transparent focus:border-blue-500/30 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:bg-white dark:focus:bg-slate-700 transition-all duration-300 text-sm md:text-base text-slate-700 dark:text-slate-200 placeholder:text-slate-500 shadow-inner"
                     />
 
                     {/* Search Results Dropdown */}
@@ -93,6 +123,58 @@ const Header = () => {
                                             <p className="text-sm font-bold text-slate-800 dark:text-white">{i.nombre}</p>
                                             <p className="text-xs text-slate-500">{i.codigo || 'Sin código'}</p>
                                         </Link>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Documents Section */}
+                            {searchResults.documents.length > 0 && (
+                                <div className="p-2 border-t border-slate-100 dark:border-slate-800">
+                                    <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase px-2 mb-1">Documentos</h4>
+                                    {searchResults.documents.map(d => (
+                                        <Link key={d.id} to="/documents" className="block px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg">
+                                            <p className="text-sm font-bold text-slate-800 dark:text-white">{d.titulo}</p>
+                                            <p className="text-xs text-slate-500">{d.tipo}</p>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Owners Section */}
+                            {searchResults.owners.length > 0 && (
+                                <div className="p-2 border-t border-slate-100 dark:border-slate-800">
+                                    <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase px-2 mb-1">Clientes</h4>
+                                    {searchResults.owners.map(o => (
+                                        <Link key={o.id} to="/clients" className="block px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg">
+                                            <p className="text-sm font-bold text-slate-800 dark:text-white">{o.nombre} {o.apellido}</p>
+                                            <p className="text-xs text-slate-500">{o.cedula || 'Sin ID'}</p>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Mechanics Section */}
+                            {searchResults.mechanics.length > 0 && (
+                                <div className="p-2 border-t border-slate-100 dark:border-slate-800">
+                                    <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase px-2 mb-1">Mecánicos</h4>
+                                    {searchResults.mechanics.map(m => (
+                                        <Link key={m.id} to="/mechanics" className="block px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg">
+                                            <p className="text-sm font-bold text-slate-800 dark:text-white">{m.nombre}</p>
+                                            <p className="text-xs text-slate-500">{m.especialidad || 'Mecánico'}</p>
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Notifications Section */}
+                            {searchResults.notifications.length > 0 && (
+                                <div className="p-2 border-t border-slate-100 dark:border-slate-800">
+                                    <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase px-2 mb-1">Notificaciones</h4>
+                                    {searchResults.notifications.map(n => (
+                                        <div key={n.id} className="block px-3 py-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg cursor-pointer" onClick={() => markNotificationAsRead(n.id)}>
+                                            <p className="text-sm font-bold text-slate-800 dark:text-white truncate">{n.titulo}</p>
+                                            <p className="text-xs text-slate-500 truncate">{n.mensaje}</p>
+                                        </div>
                                     ))}
                                 </div>
                             )}

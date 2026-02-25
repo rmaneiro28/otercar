@@ -6,23 +6,43 @@ import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout/Layout';
 import Loading from './components/Loading';
 
-// Lazy load pages
-const Dashboard = React.lazy(() => import('./pages/Dashboard'));
-const Vehicles = React.lazy(() => import('./pages/Vehicles'));
-const Inventory = React.lazy(() => import('./pages/Inventory'));
-const Mechanics = React.lazy(() => import('./pages/Mechanics'));
-const Stores = React.lazy(() => import('./pages/Stores'));
-const Login = React.lazy(() => import('./pages/Login'));
-const Register = React.lazy(() => import('./pages/Register'));
-const Profile = React.lazy(() => import('./pages/Profile'));
-const Settings = React.lazy(() => import('./pages/Settings'));
-const Maintenance = React.lazy(() => import('./pages/Maintenance'));
-const AIHistory = React.lazy(() => import('./pages/AIHistory'));
+// Robust lazy load with retry logic for failed chunks (common after new deploys)
+const lazyRetry = (componentImport) =>
+  React.lazy(async () => {
+    const pageHasBeenForceRefreshed = JSON.parse(
+      window.sessionStorage.getItem('page-has-been-force-refreshed') || 'false'
+    );
 
-const Owners = React.lazy(() => import('./pages/Owners'));
-const Documents = React.lazy(() => import('./pages/Documents'));
-const Fuel = React.lazy(() => import('./pages/Fuel'));
-const CalendarPage = React.lazy(() => import('./pages/CalendarPage'));
+    try {
+      const component = await componentImport();
+      window.sessionStorage.setItem('page-has-been-force-refreshed', 'false');
+      return component;
+    } catch (error) {
+      if (!pageHasBeenForceRefreshed) {
+        window.sessionStorage.setItem('page-has-been-force-refreshed', 'true');
+        return window.location.reload();
+      }
+      throw error;
+    }
+  });
+
+// Lazy load pages
+const Dashboard = lazyRetry(() => import('./pages/Dashboard'));
+const Vehicles = lazyRetry(() => import('./pages/Vehicles'));
+const Inventory = lazyRetry(() => import('./pages/Inventory'));
+const Mechanics = lazyRetry(() => import('./pages/Mechanics'));
+const Stores = lazyRetry(() => import('./pages/Stores'));
+const Login = lazyRetry(() => import('./pages/Login'));
+const Register = lazyRetry(() => import('./pages/Register'));
+const Profile = lazyRetry(() => import('./pages/Profile'));
+const Settings = lazyRetry(() => import('./pages/Settings'));
+const Maintenance = lazyRetry(() => import('./pages/Maintenance'));
+const AIHistory = lazyRetry(() => import('./pages/AIHistory'));
+
+const Owners = lazyRetry(() => import('./pages/Owners'));
+const Documents = lazyRetry(() => import('./pages/Documents'));
+const Fuel = lazyRetry(() => import('./pages/Fuel'));
+const CalendarPage = lazyRetry(() => import('./pages/CalendarPage'));
 
 const PrivateRoute = ({ children }) => {
   const { user } = useAuth();
